@@ -1,15 +1,23 @@
 import { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, ChevronRight } from 'lucide-react';
 import TaskDetailsPanel from '../components/TaskDetailsPanel';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { DEFAULT_LISTS, DEFAULT_TAGS } from '../constants/defaults';
+import { addTodo, updateTodo, deleteTodo, toggleComplete } from '../store/slices/todoSlice';
 
-function TodoPage({ todos = [], setTodos }) {
+function TodoPage() {
+  const todos = useSelector((state) => state.todos.todos);
+  const dispatch = useDispatch();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [todoToDelete, setTodoToDelete] = useState(null);
 
   function openCreatePanel() {
     setSelectedTask(null);
@@ -18,20 +26,27 @@ function TodoPage({ todos = [], setTodos }) {
   }
 
   function handleToggleCompleted(todo) {
-    setTodos(
-      todos.map((t) =>
-        t._id === todo._id ? { ...t, completed: !t.completed } : t
-      )
-    );
-
+    dispatch(toggleComplete(todo._id));
+    
     if (selectedTask && selectedTask._id === todo._id) {
       setSelectedTask({ ...selectedTask, completed: !selectedTask.completed });
     }
   }
 
   function handleDelete(id) {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      setTodos(todos.filter((t) => t._id !== id));
+    const todo = todos.find((t) => t._id === id);
+    setTodoToDelete({ id, title: todo?.title || '' });
+    setIsDeleteModalOpen(true);
+  }
+
+  function confirmDelete() {
+    if (todoToDelete) {
+      dispatch(deleteTodo(todoToDelete.id));
+      if (selectedTask && selectedTask._id === todoToDelete.id) {
+        setIsDetailsPanelOpen(false);
+        setSelectedTask(null);
+      }
+      setTodoToDelete(null);
     }
   }
 
@@ -46,9 +61,14 @@ function TodoPage({ todos = [], setTodos }) {
         createdAt: new Date().toISOString(),
       };
 
-      setTodos([...todos, newTodo]);
+      dispatch(addTodo(newTodo));
     } else {
-      setTodos(todos.map((t) => (t._id === id ? { ...t, ...taskData } : t)));
+      dispatch(
+        updateTodo({
+          id: id,
+          updates: taskData,
+        })
+      );
 
       if (selectedTask && selectedTask._id === id) {
         setSelectedTask({ ...selectedTask, ...taskData });
@@ -59,7 +79,8 @@ function TodoPage({ todos = [], setTodos }) {
   const filteredTodos = todos.filter((todo) => {
     const matchesSearch =
       todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (todo.description && todo.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (todo.description &&
+        todo.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (filter === 'active') return matchesSearch && !todo.completed;
     if (filter === 'completed') return matchesSearch && todo.completed;
@@ -225,6 +246,16 @@ function TodoPage({ todos = [], setTodos }) {
         onSave={handleSaveTask}
         lists={DEFAULT_LISTS}
         tags={DEFAULT_TAGS}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setTodoToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        taskTitle={todoToDelete?.title}
       />
     </div>
   );

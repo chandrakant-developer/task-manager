@@ -188,13 +188,7 @@ function TaskDetailsPanel({
                 <motion.button
                   className="task-details-delete-btn"
                   onClick={() => {
-                    if (
-                      window.confirm(
-                        'Are you sure you want to delete this task?'
-                      )
-                    ) {
-                      onDelete(task._id);
-                    }
+                    onDelete(task._id);
                   }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}

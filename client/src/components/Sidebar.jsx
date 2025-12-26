@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,7 +18,8 @@ import { tagColors, listColors } from '../constants/colors';
 import { DEFAULT_LISTS, DEFAULT_TAGS, DEFAULT_TASK_MENU_ITEMS } from '../constants/defaults';
 import AddItemModal from './AddItemModal';
 
-function Sidebar({ todos = [] }) {
+function Sidebar() {
+  const todos = useSelector((state) => state.todos.todos);
   const [lists, setLists] = useState(DEFAULT_LISTS);
   const [tags, setTags] = useState(DEFAULT_TAGS);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
