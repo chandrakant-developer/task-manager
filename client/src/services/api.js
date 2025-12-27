@@ -32,3 +32,39 @@ export const deleteTodoAPI = async (id) => {
   const response = await apiClient.delete(`/todos/${id}`);
   return response.data;
 };
+
+// Lists API
+export const getListsAPI = async (userId = null) => {
+  const url = userId ? `/lists?userId=${userId}` : '/lists';
+  const response = await apiClient.get(url);
+  return response.data;
+};
+
+export const createListAPI = async (name, userId = null) => {
+  const response = await apiClient.post('/lists', { name, userId });
+  return response.data;
+};
+
+export const deleteListAPI = async (id, userId = null) => {
+  const url = userId ? `/lists/${id}?userId=${userId}` : `/lists/${id}`;
+  const response = await apiClient.delete(url);
+  return response.data;
+};
+
+// Tags API
+export const getTagsAPI = async (userId = null) => {
+  const url = userId ? `/tags?userId=${userId}` : '/tags';
+  const response = await apiClient.get(url);
+  return response.data;
+};
+
+export const createTagAPI = async (name, userId = null) => {
+  const response = await apiClient.post('/tags', { name, userId });
+  return response.data;
+};
+
+export const deleteTagAPI = async (id, userId = null) => {
+  const url = userId ? `/tags/${id}?userId=${userId}` : `/tags/${id}`;
+  const response = await apiClient.delete(url);
+  return response.data;
+};

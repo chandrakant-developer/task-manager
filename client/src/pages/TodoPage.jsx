@@ -5,7 +5,6 @@ import { Plus, Search, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TaskDetailsPanel from '../components/TaskDetailsPanel';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
-import { DEFAULT_LISTS, DEFAULT_TAGS } from '../constants/defaults';
 import { createTodosAsync, updateTodoAsync, deleteTodoAsync, toggleCompleteAsync } from '../store/slices/todoSlice';
 
 function TodoPage() {
@@ -281,8 +280,6 @@ function TodoPage() {
         task={selectedTask}
         onDelete={handleDelete}
         onSave={handleSaveTask}
-        lists={DEFAULT_LISTS}
-        tags={DEFAULT_TAGS}
       />
 
       <DeleteConfirmModal

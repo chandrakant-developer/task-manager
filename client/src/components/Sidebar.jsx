@@ -1,5 +1,8 @@
 import { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { createListAsync } from '../store/slices/listSlice';
+import { createTagAsync } from '../store/slices/tagSlice';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -15,13 +18,15 @@ import {
   User,
 } from 'lucide-react';
 import { tagColors, listColors } from '../constants/colors';
-import { DEFAULT_LISTS, DEFAULT_TAGS, DEFAULT_TASK_MENU_ITEMS } from '../constants/defaults';
+import { DEFAULT_TASK_MENU_ITEMS } from '../constants/defaults';
 import AddItemModal from './AddItemModal';
 
 function Sidebar() {
   const todos = useSelector((state) => state.todos.todos);
-  const [lists, setLists] = useState(DEFAULT_LISTS);
-  const [tags, setTags] = useState(DEFAULT_TAGS);
+  const lists = useSelector((state) => state.lists.lists);
+  const tags = useSelector((state) => state.tags.tags);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isAddListModalOpen, setIsAddListModalOpen] = useState(false);
   const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false);
@@ -29,12 +34,22 @@ function Sidebar() {
   const sidebarRef = useRef(null);
   const [menuPosition, setMenuPosition] = useState({ bottom: 0, left: 0 });
 
+  function toTitleCase(str) {
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
   function handleAddList(newListName) {
-    setLists((prev) => [...prev, newListName]);
+    const formattedName = toTitleCase(newListName.trim());
+    dispatch(createListAsync(formattedName));
   }
 
   function handleAddTag(newTagName) {
-    setTags((prev) => [...prev, newTagName]);
+    const formattedName = toTitleCase(newTagName.trim());
+    dispatch(createTagAsync(formattedName));
   }
 
   const today = new Date().toISOString().split('T')[0];
@@ -93,107 +108,107 @@ function Sidebar() {
           </div>
         </div>
 
-        <div className="sidebar-section">
-          <div className="sidebar-section-header">
-            <span>Tasks</span>
+        <div className="sidebar-scrollable">
+          <div className="sidebar-section">
+            <div className="sidebar-section-header">
+              <span>Tasks</span>
+            </div>
+
+            <ul className="sidebar-sublist">
+              {DEFAULT_TASK_MENU_ITEMS.map((menuItem) => {
+                const IconComponent = getTaskMenuIcon(menuItem.id);
+                const count = getTaskMenuCount(menuItem.id);
+
+                return (
+                  <li key={menuItem.id}>
+                    <button className="sidebar-item" title={menuItem.label}>
+                      <span>
+                        <IconComponent size={16} />
+                        <span>{menuItem.label}</span>
+                      </span>
+
+                      {count > 0 && (
+                        <span className="sidebar-item-count">{count}</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
-          <ul className="sidebar-sublist">
-            {DEFAULT_TASK_MENU_ITEMS.map((menuItem) => {
-              const IconComponent = getTaskMenuIcon(menuItem.id);
-              const count = getTaskMenuCount(menuItem.id);
-
-              return (
-                <li key={menuItem.id}>
-                  <button className="sidebar-item" title={menuItem.label}>
-                    <span>
-                      <IconComponent size={16} />
-                      <span>{menuItem.label}</span>
-                    </span>
-
-                    {count > 0 && (
-                      <span className="sidebar-item-count">{count}</span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <div className="sidebar-section">
-          <div className="sidebar-section-header">
-            <span>Lists</span>
-          </div>
-
-          <ul className="sidebar-sublist">
-            {lists.map((list, index) => {
-              const listCount = getListCount(list);
-
-              return (
-                <li key={index}>
-                  <button className="sidebar-item" title={list}>
-                    <span>
-                      <Folder
-                        size={16}
-                        style={{
-                          color: listColors[index % listColors.length],
-                          fill: listColors[index % listColors.length],
-                        }}
-                      />
-                      <span>{list}</span>
-                    </span>
-
-                    {listCount > 0 && (
-                      <span className="sidebar-item-count">{listCount}</span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-
-            <li>
+          <div className="sidebar-section">
+            <div className="sidebar-section-header">
+              <span>Lists</span>
               <button
-                className="sidebar-item add-item"
+                className="sidebar-add-btn"
                 onClick={() => setIsAddListModalOpen(true)}
+                title="Add New List"
               >
-                <Plus size={16} />
-                <span>Add New List</span>
+                <Plus size={14} />
+                <span>Add List</span>
               </button>
-            </li>
-          </ul>
-        </div>
+            </div>
 
-        <div className="sidebar-section">
-          <div className="sidebar-section-header">
-            <span>Tags</span>
+            <ul className="sidebar-sublist">
+              {lists.map((list, index) => {
+                const listCount = getListCount(list.name);
+
+                return (
+                  <li key={list._id}>
+                    <button className="sidebar-item" title={list.name}>
+                      <span>
+                        <Folder
+                          size={16}
+                          style={{
+                            color: listColors[index % listColors.length],
+                            fill: listColors[index % listColors.length],
+                          }}
+                        />
+                        <span>{list.name}</span>
+                      </span>
+
+                      {listCount > 0 && (
+                        <span className="sidebar-item-count">{listCount}</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
-          <div className="sidebar-tags-container">
-            {tags.map((tag, index) => {
-              const tagColor = tagColors[index % tagColors.length];
-              return (
-                <button
-                  key={index}
-                  className="sidebar-tag"
-                  title={tag}
-                  style={{
-                    backgroundColor: tagColor.bg,
-                    color: tagColor.text,
-                  }}
-                >
-                  <span>{tag}</span>
-                </button>
-              );
-            })}
+          <div className="sidebar-section">
+            <div className="sidebar-section-header">
+              <span>Tags</span>
+              <button
+                className="sidebar-add-btn"
+                onClick={() => setIsAddTagModalOpen(true)}
+                title="Add New Tag"
+              >
+                <Plus size={14} />
+                <span>Add Tag</span>
+              </button>
+            </div>
 
-            <button
-              className="sidebar-tag add-tag"
-              onClick={() => setIsAddTagModalOpen(true)}
-            >
-              <Plus size={14} />
-              <span>Add Tag</span>
-            </button>
+            <div className="sidebar-tags-container">
+              {tags.map((tag, index) => {
+                const tagColor = tagColors[index % tagColors.length];
+                return (
+                  <button
+                    key={tag._id}
+                    className="sidebar-tag"
+                    title={tag.name}
+                    style={{
+                      backgroundColor: tagColor.bg,
+                      color: tagColor.text,
+                    }}
+                  >
+                    <span>{tag.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -254,7 +269,14 @@ function Sidebar() {
                   exit={{ opacity: 0, x: -20, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <button className="sidebar-user-menu-item" title="Settings">
+                  <button
+                    className="sidebar-user-menu-item"
+                    title="Settings"
+                    onClick={() => {
+                      navigate('/settings');
+                      setIsUserMenuOpen(false);
+                    }}
+                  >
                     <Settings size={18} />
                     <span>Settings</span>
                   </button>

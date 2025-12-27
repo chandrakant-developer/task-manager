@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 
-function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle }) {
+function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle, title = 'Delete Task', message = 'Are you sure you want to delete this task?' }) {
   function handleOverlayClick(e) {
     if (e.target === e.currentTarget) {
       onClose();
@@ -46,7 +46,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle }) {
             }}
           >
             <div className="add-item-modal-header">
-              <h3>Delete Task</h3>
+              <h3>{title}</h3>
 
               <button
                 className="add-item-modal-close-btn"
@@ -72,7 +72,7 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle }) {
                 <AlertTriangle size={24} color="#ef4444" style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: '1.5' }}>
-                    Are you sure you want to delete this task?
+                    {message}
                   </p>
                   {taskTitle && (
                     <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-main)', lineHeight: '1.5' }}>

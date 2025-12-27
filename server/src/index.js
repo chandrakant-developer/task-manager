@@ -3,11 +3,17 @@ const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const todoRoutes = require('./routes/todoRoutes');
+const listRoutes = require('./routes/listRoutes');
+const tagRoutes = require('./routes/tagRoutes');
+const seedDefaultData = require('./config/seedData');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-connectDB();
+(async () => {
+  await connectDB();
+  seedDefaultData();
+})();
 
 app.use(cors());
 app.use(express.json());
@@ -18,6 +24,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/todos', todoRoutes);
+app.use('/api/lists', listRoutes);
+app.use('/api/tags', tagRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route Not Found!!' });

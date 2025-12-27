@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -8,9 +9,9 @@ function TaskDetailsPanel({
   task,
   onDelete,
   onSave,
-  lists = [],
-  tags = [],
 }) {
+  const lists = useSelector((state) => state.lists.lists);
+  const tags = useSelector((state) => state.tags.tags);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [selectedList, setSelectedList] = useState('');
@@ -125,9 +126,9 @@ function TaskDetailsPanel({
                     className="task-details-select"
                   >
                     <option value="">Select List</option>
-                    {lists.map((list, index) => (
-                      <option key={index} value={list}>
-                        {list}
+                    {lists.map((list) => (
+                      <option key={list._id} value={list.name}>
+                        {list.name}
                       </option>
                     ))}
                   </select>
@@ -154,16 +155,16 @@ function TaskDetailsPanel({
 
                 <div className="task-details-tags-wrapper">
                   <div className="task-details-tags-container">
-                    {tags.map((tag, index) => {
-                      const isSelected = selectedTags.includes(tag);
+                    {tags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.name);
                       return (
                         <button
-                          key={index}
+                          key={tag._id}
                           type="button"
                           className={`task-details-tag ${isSelected ? 'selected' : ''}`}
-                          onClick={() => toggleTag(tag)}
+                          onClick={() => toggleTag(tag.name)}
                         >
-                          {tag}
+                          {tag.name}
                         </button>
                       );
                     })}
@@ -186,9 +187,7 @@ function TaskDetailsPanel({
               {!isCreateMode && (
                 <motion.button
                   className="task-details-delete-btn"
-                  onClick={() => {
-                    onDelete(task._id);
-                  }}
+                  onClick={() => onDelete(task._id)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
