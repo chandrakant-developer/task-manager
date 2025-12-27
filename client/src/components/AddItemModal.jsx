@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-function AddItemModal({ isOpen, onClose, onSave, title, placeholder, type }) {
+function AddItemModal({ isOpen, onClose, onSave, title, placeholder }) {
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {

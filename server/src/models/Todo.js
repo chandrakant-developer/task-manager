@@ -15,6 +15,17 @@ const todoSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    list: {
+      type: String,
+      trim: true,
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    dueDate: {
+      type: String,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

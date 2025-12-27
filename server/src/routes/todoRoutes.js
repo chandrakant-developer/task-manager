@@ -27,8 +27,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, description } = req.body;
-    const newTodo = await Todo.create({ title, description });
+    const { title, description, list, dueDate, tags } = req.body;
+    const newTodo = await Todo.create({
+      title,
+      description,
+      list,
+      dueDate,
+      tags,
+    });
     res.status(201).json(newTodo);
   } catch (error) {
     res
@@ -39,10 +45,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, completed, list, dueDate, tags } = req.body;
     const updatedTodo = await Todo.findByIdAndUpdate(
       req.params.id,
-      { title, description },
+      { title, description, completed, list, dueDate, tags },
       { new: true }
     );
     res.json(updatedTodo);

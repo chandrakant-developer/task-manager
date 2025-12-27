@@ -13,12 +13,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Task Manager API is running!!' });
+app.get('/health', (req, res) => {
+  res.json({ message: 'Task Manager API is Running!!' });
 });
 
 app.use('/api/todos', todoRoutes);
 
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route Not Found!!' });
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is Running on Port ${PORT}`);
 });

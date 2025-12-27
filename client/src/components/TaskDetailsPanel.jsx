@@ -76,7 +76,7 @@ function TaskDetailsPanel({
           initial={{ x: 450 }}
           animate={{ x: 0 }}
           exit={{ x: 450 }}
-          transition={{ duration: 0.3, ease: 'easeInOut', delay: 0 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
           <div className="task-details-header">
             <h2>{isCreateMode ? 'Create New Task' : 'Task Details'}</h2>
@@ -125,7 +125,6 @@ function TaskDetailsPanel({
                     className="task-details-select"
                   >
                     <option value="">Select List</option>
-                    
                     {lists.map((list, index) => (
                       <option key={index} value={list}>
                         {list}

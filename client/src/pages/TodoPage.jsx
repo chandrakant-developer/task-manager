@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, ChevronRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import TaskDetailsPanel from '../components/TaskDetailsPanel';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { DEFAULT_LISTS, DEFAULT_TAGS } from '../constants/defaults';
-import { addTodo, updateTodo, deleteTodo, toggleComplete } from '../store/slices/todoSlice';
+import { createTodosAsync, updateTodoAsync, deleteTodoAsync, toggleCompleteAsync } from '../store/slices/todoSlice';
 
 function TodoPage() {
   const todos = useSelector((state) => state.todos.todos);
+  const loading = useSelector((state) => state.todos.loading);
+  const error = useSelector((state) => state.todos.error);
   const dispatch = useDispatch();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,53 +29,78 @@ function TodoPage() {
   }
 
   function handleToggleCompleted(todo) {
-    dispatch(toggleComplete(todo._id));
-    
-    if (selectedTask && selectedTask._id === todo._id) {
-      setSelectedTask({ ...selectedTask, completed: !selectedTask.completed });
-    }
+    dispatch(toggleCompleteAsync({ 
+      id: todo._id, 
+      currentCompleted: todo.completed 
+    }))
+    .then((result) => {
+      if (toggleCompleteAsync.fulfilled.match(result)) {
+        if (selectedTask && selectedTask._id === todo._id) {
+          setSelectedTask(result.payload);
+        }
+      } else {
+        toast.error(`Error updating task: ${result.error.message}`);
+      }
+    });
   }
 
   function handleDelete(id) {
     const todo = todos.find((t) => t._id === id);
-    setTodoToDelete({ id, title: todo?.title || '' });
+    setTodoToDelete({ id, title: todo?.title });
     setIsDeleteModalOpen(true);
   }
 
   function confirmDelete() {
     if (todoToDelete) {
-      dispatch(deleteTodo(todoToDelete.id));
-      if (selectedTask && selectedTask._id === todoToDelete.id) {
-        setIsDetailsPanelOpen(false);
-        setSelectedTask(null);
-      }
-      setTodoToDelete(null);
+      dispatch(deleteTodoAsync(todoToDelete.id))
+      .then((result) => {
+        if (deleteTodoAsync.fulfilled.match(result)) {
+          if (selectedTask && selectedTask._id === todoToDelete.id) {
+            setIsDetailsPanelOpen(false);
+            setSelectedTask(null);
+          }
+          setTodoToDelete(null);
+          toast.success(`Task "${todoToDelete.title}" deleted successfully!`);
+        } else {
+          toast.error(`Error deleting task: ${result.error.message}`);
+        }
+      });
     }
   }
 
   function handleSaveTask(id, taskData) {
     if (id === null) {
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).slice(2, 11);
-      const newTodo = {
-        _id: `${timestamp}-${random}`,
-        ...taskData,
-        completed: false,
-        createdAt: new Date().toISOString(),
-      };
-
-      dispatch(addTodo(newTodo));
+      dispatch(createTodosAsync({
+        title: taskData.title,
+        description: taskData.description,
+        list: taskData.list,
+        dueDate: taskData.dueDate,
+        tags: taskData.tags,
+      }))
+      .then((result) => {
+        if(createTodosAsync.fulfilled.match(result)) {
+          toast.success(`Task "${taskData.title}" created successfully!`);
+        } else {
+          toast.error(`Error creating task: ${result.error.message}`);
+        }
+      });
     } else {
       dispatch(
-        updateTodo({
+        updateTodoAsync({
           id: id,
           updates: taskData,
         })
-      );
-
-      if (selectedTask && selectedTask._id === id) {
-        setSelectedTask({ ...selectedTask, ...taskData });
-      }
+      )
+      .then((result) => {
+        if (updateTodoAsync.fulfilled.match(result)) {
+          if (selectedTask && selectedTask._id === id) {
+            setSelectedTask(result.payload);
+          }
+          toast.success(`Task "${taskData.title}" updated successfully!`);
+        } else {
+          toast.error(`Error updating task: ${result.error.message}`);
+        }
+      });
     }
   }
 
@@ -151,7 +179,15 @@ function TodoPage() {
               </div>
             </div>
 
-            {filteredTodos.length === 0 && (
+            {loading && (
+              <p className="empty-text">Loading tasks...</p>
+            )}
+
+            {error && (
+              <p className="error-text">Error: {error}</p>
+            )}
+
+            {!loading && !error && filteredTodos.length === 0 && (
               <p className="empty-text">
                 {searchQuery
                   ? 'No tasks match your search'
@@ -161,16 +197,16 @@ function TodoPage() {
               </p>
             )}
 
-            <AnimatePresence>
-              <ul className="todo-list">
-                {filteredTodos.map((todo) => (
+            {!loading && !error && (
+              <AnimatePresence>
+                <ul className="todo-list">
+                  {filteredTodos.map((todo) => (
                   <motion.li
                     key={todo._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className={`todo-item ${todo.completed ? 'completed' : ''} ${selectedTask && selectedTask._id === todo._id ? 'active' : ''
-                      }`}
+                    className={`todo-item ${todo.completed ? 'completed' : ''} ${selectedTask && selectedTask._id === todo._id ? 'active' : ''}`}
                   >
                     <div
                       className="todo-main"
@@ -212,9 +248,10 @@ function TodoPage() {
                       }}
                     />
                   </motion.li>
-                ))}
-              </ul>
-            </AnimatePresence>
+                  ))}
+                </ul>
+              </AnimatePresence>
+            )}
           </motion.section>
         </main>
 

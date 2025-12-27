@@ -276,7 +276,6 @@ function Sidebar() {
           onSave={handleAddList}
           title="Add New List"
           placeholder="Enter list name"
-          type="list"
         />
 
         <AddItemModal
@@ -285,7 +284,6 @@ function Sidebar() {
           onSave={handleAddTag}
           title="Add New Tag"
           placeholder="Enter tag name"
-          type="tag"
         />
       </div>
     </aside>
