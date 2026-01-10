@@ -4,7 +4,7 @@ pipeline {
   environment {
     AWS_REGION = "ap-south-1"
     ACCOUNT_ID = "675550800459"
-    ECR_REPO   = "task-manager-ui"
+    ECR_REPO   = "task-manager"
     ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     IMAGE_TAG  = "${BUILD_NUMBER}"
     S3_BUCKET  = "task-manager-ui-artifact-bucket"
@@ -18,30 +18,46 @@ pipeline {
       }
     }
 
+    stage('Install & Build Frontend') {
+      steps {
+        dir('client') {
+          sh '''
+          npm install
+          npm run build
+          '''
+        }
+      }
+    }
+
     stage("Create Artifact") {
       steps {
-        sh '''
-          mkdir build
-          cp index.html build/
-          tar -czf artifact-${BUILD_NUMBER}.tar.gz build
-        '''
+        dir('client') {
+          sh '''
+          rm -rf artifact
+          mkdir -p artifact
+          cp -r build/* artifact/
+          '''
+        }
       }
     }
 
-    stage("Upload Artifact to S3") {
+    stage('Upload Artifact to S3') {
       steps {
-        sh '''
-          aws s3 cp artifact-${BUILD_NUMBER}.tar.gz \
-          s3://${S3_BUCKET}/
-        '''
+        dir('client') {
+          sh '''
+          aws s3 sync artifact/ s3://${S3_BUCKET}/frontend/${BUILD_NUMBER}/
+          '''
+        }
       }
     }
 
-    stage("Build Docker Image") {
+    stage('Build Docker Image') {
       steps {
-        sh '''
-          docker build -t ${ECR_REPO}:${IMAGE_TAG} .
-        '''
+        dir('client') {
+          sh '''
+          docker build -t frontend-app:${IMAGE_TAG} .
+          '''
+        }
       }
     }
 
@@ -57,12 +73,19 @@ pipeline {
     stage("Push Image") {
       steps {
         sh '''
-          docker tag ${ECR_REPO}:${IMAGE_TAG} \
-          ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
-
-          docker push ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+        docker tag frontend-app:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
+        docker push ${ECR_REPO}:${IMAGE_TAG}
         '''
       }
+    }
+  }
+
+  post {
+    success {
+      echo "Frontend build & push completed successfully!"
+    }
+    failure {
+      echo "Frontend pipeline failed."
     }
   }
 }
