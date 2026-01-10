@@ -1,0 +1,49 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = "ap-south-1"
+    ACCOUNT_ID = "675550800459"
+    ECR_REPO   = "task-manager-ui"
+    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+  }
+
+  stages {
+
+    stage("Login to ECR") {
+      steps {
+        sh '''
+          aws ecr get-login-password --region ${AWS_REGION} |
+          docker login --username AWS --password-stdin ${ECR_URI}
+        '''
+      }
+    }
+
+    stage("Pull Image") {
+      steps {
+        sh '''
+          docker pull ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+        '''
+      }
+    }
+
+    stage("Stop Old Container") {
+      steps {
+        sh '''
+          docker stop ${APP_NAME} || true
+          docker rm ${APP_NAME} || true
+        '''
+      }
+    }
+
+    stage("Run Container") {
+      steps {
+        sh '''
+          docker run -d --name ${APP_NAME} \
+          -p 80:80 \
+          ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+        '''
+      }
+    }
+  }
+}
