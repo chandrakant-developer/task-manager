@@ -5,7 +5,7 @@ pipeline {
     AWS_REGION = "ap-south-1"
     ACCOUNT_ID = "675550800459"
     APP_NAME   = "task-manager"
-    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}/frontend"
+    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}-frontend"
     IMAGE_TAG  = "${BUILD_NUMBER}"
     S3_BUCKET  = "${APP_NAME}-artifact-bucket"
   }
