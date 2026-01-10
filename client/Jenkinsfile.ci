@@ -4,10 +4,10 @@ pipeline {
   environment {
     AWS_REGION = "ap-south-1"
     ACCOUNT_ID = "675550800459"
-    ECR_REPO   = "task-manager"
-    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    APP_NAME   = "task-manager"
+    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}/frontend"
     IMAGE_TAG  = "${BUILD_NUMBER}"
-    S3_BUCKET  = "task-manager-artifact-bucket"
+    S3_BUCKET  = "${APP_NAME}-artifact-bucket"
   }
 
   stages {
@@ -73,8 +73,8 @@ pipeline {
     stage("Push Image") {
       steps {
         sh '''
-        docker tag frontend-app:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
-        docker push ${ECR_REPO}:${IMAGE_TAG}
+        docker tag frontend-app:${IMAGE_TAG} ${ECR_URI}:${IMAGE_TAG}
+        docker push ${ECR_URI}:${IMAGE_TAG}
         '''
       }
     }
