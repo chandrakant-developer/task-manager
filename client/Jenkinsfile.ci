@@ -1,0 +1,68 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = "ap-south-1"
+    ACCOUNT_ID = "675550800459"
+    ECR_REPO   = "task-manager-ui"
+    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    IMAGE_TAG  = "${BUILD_NUMBER}"
+    S3_BUCKET  = "task-manager-ui-artifact-bucket"
+  }
+
+  stages {
+
+    stage("Checkout Code") {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage("Create Artifact") {
+      steps {
+        sh '''
+          mkdir build
+          cp index.html build/
+          tar -czf artifact-${BUILD_NUMBER}.tar.gz build
+        '''
+      }
+    }
+
+    stage("Upload Artifact to S3") {
+      steps {
+        sh '''
+          aws s3 cp artifact-${BUILD_NUMBER}.tar.gz \
+          s3://${S3_BUCKET}/
+        '''
+      }
+    }
+
+    stage("Build Docker Image") {
+      steps {
+        sh '''
+          docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+        '''
+      }
+    }
+
+    stage("Login to ECR") {
+      steps {
+        sh '''
+          aws ecr get-login-password --region ${AWS_REGION} |
+          docker login --username AWS --password-stdin ${ECR_URI}
+        '''
+      }
+    }
+
+    stage("Push Image") {
+      steps {
+        sh '''
+          docker tag ${ECR_REPO}:${IMAGE_TAG} \
+          ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+
+          docker push ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+        '''
+      }
+    }
+  }
+}
