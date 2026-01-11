@@ -5,12 +5,21 @@ pipeline {
     AWS_REGION = "ap-south-1"
     ACCOUNT_ID = "675550800459"
     APP_NAME   = "task-manager"
-    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP_NAME}-frontend"
-    IMAGE_TAG  = "${BUILD_NUMBER}"
+    ECR_REGISTRY = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    ECR_REPO = "${APP_NAME}-frontend"
     S3_BUCKET  = "${APP_NAME}-artifact-bucket"
   }
 
   stages {
+
+    stage("Prepare Variables") {
+      steps {
+        script {
+          env.SAFE_BRANCH = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
+          env.IMAGE_TAG   = "${env.SAFE_BRANCH}-${env.BUILD_NUMBER}"
+        }
+      }
+    }
 
     stage("Checkout Code") {
       steps {
@@ -45,7 +54,8 @@ pipeline {
       steps {
         dir('client') {
           sh '''
-          aws s3 sync artifact/ s3://${S3_BUCKET}/frontend/${BUILD_NUMBER}/
+          aws s3 sync artifact/ \
+          s3://${S3_BUCKET}/frontend/${SAFE_BRANCH}/${BUILD_NUMBER}/
           '''
         }
       }
@@ -65,7 +75,7 @@ pipeline {
       steps {
         sh '''
           aws ecr get-login-password --region ${AWS_REGION} |
-          docker login --username AWS --password-stdin ${ECR_URI}
+          docker login --username AWS --password-stdin ${ECR_REGISTRY}
         '''
       }
     }
@@ -73,8 +83,10 @@ pipeline {
     stage("Push Image") {
       steps {
         sh '''
-        docker tag frontend-app:${IMAGE_TAG} ${ECR_URI}:${IMAGE_TAG}
-        docker push ${ECR_URI}:${IMAGE_TAG}
+        docker tag frontend-app:${IMAGE_TAG} \
+        ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+
+        docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
         '''
       }
     }
