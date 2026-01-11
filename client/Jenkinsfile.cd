@@ -1,28 +1,50 @@
 pipeline {
   agent any
 
+  parameters {
+    choice(
+      name: 'APP_NAME',
+      choices: ['task-manager-frontend'],
+      description: 'Select application to deploy'
+    )
+    string(
+      name: 'IMAGE_TAG',
+      defaultValue: '',
+      description: 'Enter image tag (example: main-12, feature-login-2)'
+    )
+  }
+
   environment {
     AWS_REGION = "ap-south-1"
     ACCOUNT_ID = "675550800459"
-    ECR_REPO   = "task-manager-ui"
-    ECR_URI    = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    ECR_REGISTRY = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
   }
 
   stages {
+
+    stage("Validate Parameters") {
+      steps {
+        script {
+          if (!params.IMAGE_TAG?.trim()) {
+            error("IMAGE_TAG is required")
+          }
+        }
+      }
+    }
 
     stage("Login to ECR") {
       steps {
         sh '''
           aws ecr get-login-password --region ${AWS_REGION} |
-          docker login --username AWS --password-stdin ${ECR_URI}
+          docker login --username AWS --password-stdin ${ECR_REGISTRY}
         '''
       }
     }
 
-    stage("Pull Image") {
+    stage("Pull Docker Image") {
       steps {
         sh '''
-          docker pull ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+          docker pull ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
         '''
       }
     }
@@ -36,14 +58,31 @@ pipeline {
       }
     }
 
-    stage("Run Container") {
+    stage("Run New Container") {
       steps {
         sh '''
           docker run -d --name ${APP_NAME} \
-          -p 80:80 \
-          ${ECR_URI}/${ECR_REPO}:${IMAGE_TAG}
+          -p 8085:80 \
+          ${ECR_REGISTRY}/${APP_NAME}:${IMAGE_TAG}
         '''
       }
+    }
+    
+    stage("Verify Deployment") {
+      steps {
+        sh '''
+          docker ps | grep ${APP_NAME}
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Deployment successful!"
+    }
+    failure {
+      echo "Deployment failed."
     }
   }
 }
