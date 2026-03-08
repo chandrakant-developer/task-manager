@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-function AddItemModal({ isOpen, onClose, onSave, title, placeholder }) {
+export function AddItemModal({ isOpen, onClose, onSave, title, placeholder }) {
   const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
@@ -28,84 +27,62 @@ function AddItemModal({ isOpen, onClose, onSave, title, placeholder }) {
     }
   }
 
+  if (!isOpen) {
+    return null;
+  }
+
   return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            className="add-item-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleOverlayClick}
-          />
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1001]"
+      onClick={handleOverlayClick}
+    >
+      <div className="fixed top-1/2 left-1/2 bg-white rounded-xl shadow-xl w-[90%] max-w-[400px] overflow-hidden flex flex-col z-[9999] -translate-x-1/2 -translate-y-1/2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className='text-xl font-semibold text-gray-900'>
+            {title}
+          </h3>
 
-          <motion.div
-            className="add-item-modal"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: '-50%',
-              y: '-50%',
-            }}
-            exit={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-            }}
+          <button
+            className="p-2 flex items-center justify-center text-gray-500 rounded-md cursor-pointer transition-colors hover:bg-indigo-50 hover:text-indigo-500"
+            onClick={onClose}
+            type="button"
           >
-            <div className="add-item-modal-header">
-              <h3>{title}</h3>
+            <X size={20} />
+          </button>
+        </div>
 
-              <button
-                className="add-item-modal-close-btn"
-                onClick={onClose}
-                type="button"
-              >
-                <X size={20} />
-              </button>
-            </div>
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="mb-6">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={placeholder}
+              className="w-full px-4 py-3 border border-gray-200 rounded-md text-base bg-white transition-colors focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 placeholder:text-gray-500"
+              autoFocus
+            />
+          </div>
 
-            <form onSubmit={handleSubmit} className="add-item-modal-form">
-              <div className="add-item-modal-form-group">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder={placeholder}
-                  className="add-item-modal-input"
-                  autoFocus
-                />
-              </div>
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-md text-sm font-medium border border-gray-200 bg-white text-gray-500 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
 
-              <div className="add-item-modal-actions">
-                <button
-                  type="button"
-                  className="add-item-modal-cancel-btn"
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  className="add-item-modal-submit-btn"
-                  disabled={!inputValue.trim()}
-                >
-                  Add
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>,
+            <button
+              type="submit"
+              className="px-6 py-3 rounded-md text-sm font-medium bg-indigo-500 text-white transition-all duration-200 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!inputValue.trim()}
+            >
+              Add
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
     document.body
   );
 }
-
-export default AddItemModal;
-

@@ -1,8 +1,14 @@
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 
-function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle, title = 'Delete Task', message = 'Are you sure you want to delete this task?' }) {
+export function DeleteConfirmModal({ 
+  isOpen,
+  onClose,
+  onConfirm,
+  itemName,
+  title = 'Delete Task',
+  message = 'Are you sure you want to delete this task?'
+}) {
   function handleOverlayClick(e) {
     if (e.target === e.currentTarget) {
       onClose();
@@ -14,112 +20,71 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, taskTitle, title = 'De
     onClose();
   }
 
+  if (!isOpen) {
+    return null;
+  }
+
   return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            className="add-item-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={handleOverlayClick}
-          />
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1001]"
+      onClick={handleOverlayClick}
+    >
+      <div className="fixed top-1/2 left-1/2 bg-white rounded-xl shadow-xl w-[90%] max-w-[600px] overflow-hidden flex flex-col z-[9999] -translate-x-1/2 -translate-y-1/2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className='text-xl font-semibold text-gray-900'>
+            {title}
+          </h3>
 
-          <motion.div
-            className="add-item-modal"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: '-50%',
-              y: '-50%',
-            }}
-            exit={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              width: '90%',
-              maxWidth: '600px',
-            }}
+          <button
+            type="button"
+            className="p-2 flex items-center justify-center text-gray-500 rounded-md cursor-pointer transition-colors hover:bg-indigo-50 hover:text-indigo-500"
+            onClick={onClose}
           >
-            <div className="add-item-modal-header">
-              <h3>{title}</h3>
+            <X size={20} />
+          </button>
+        </div>
 
-              <button
-                className="add-item-modal-close-btn"
-                onClick={onClose}
-                type="button"
-              >
-                <X size={20} />
-              </button>
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6 p-4 bg-rose-500/10 rounded-lg">
+            <AlertTriangle size={24} className="text-rose-500 shrink-0" />
+            
+            <div className="flex-1">
+              <p className="m-0 text-gray-900 leading-relaxed">
+                {message}
+              </p>
+
+              {itemName && (
+                <p className="mt-2 mb-0 text-gray-900 leading-relaxed">
+                  <strong>"{itemName}"</strong>
+                </p>
+              )}
+
+              <p className="mt-2 mb-0 text-sm text-gray-500 leading-relaxed">
+                This action cannot be undone.
+              </p>
             </div>
+          </div>
 
-            <div className="add-item-modal-form">
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  marginBottom: '1.5rem',
-                  padding: '1rem',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  borderRadius: '8px',
-                }}
-              >
-                <AlertTriangle size={24} color="#ef4444" style={{ flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, color: 'var(--text-main)', lineHeight: '1.5' }}>
-                    {message}
-                  </p>
-                  {taskTitle && (
-                    <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-main)', lineHeight: '1.5' }}>
-                      <strong>"{taskTitle}"</strong>
-                    </p>
-                  )}
-                  <p
-                    style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '0.875rem',
-                      color: 'var(--text-muted)',
-                      lineHeight: '1.5',
-                    }}
-                  >
-                    This action cannot be undone.
-                  </p>
-                </div>
-              </div>
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              className="px-6 py-3 rounded-md text-sm font-medium border border-gray-200 bg-white text-gray-500 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
 
-              <div className="add-item-modal-actions">
-                <button
-                  type="button"
-                  className="add-item-modal-cancel-btn"
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  className="add-item-modal-submit-btn"
-                  onClick={handleConfirm}
-                  style={{
-                    background: 'var(--danger)',
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>,
+            <button
+              type="button"
+              className="px-6 py-3 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 border-none bg-rose-500 text-white hover:bg-rose-600"
+              onClick={handleConfirm}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
     document.body
   );
 }
-
-export default DeleteConfirmModal;
-

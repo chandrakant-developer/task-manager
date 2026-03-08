@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import TaskDetailsPanel from '../components/TaskDetailsPanel';
-import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import { TaskDetailsPanel, DeleteConfirmModal } from '../components';
 import { createTodosAsync, updateTodoAsync, deleteTodoAsync, toggleCompleteAsync } from '../store/slices/todoSlice';
 
-function TodoPage() {
+export function TodoPage() {
   const todos = useSelector((state) => state.todos.todos);
   const loading = useSelector((state) => state.todos.loading);
   const error = useSelector((state) => state.todos.error);
@@ -28,19 +26,19 @@ function TodoPage() {
   }
 
   function handleToggleCompleted(todo) {
-    dispatch(toggleCompleteAsync({ 
-      id: todo._id, 
-      currentCompleted: todo.completed 
+    dispatch(toggleCompleteAsync({
+      id: todo._id,
+      currentCompleted: todo.completed
     }))
-    .then((result) => {
-      if (toggleCompleteAsync.fulfilled.match(result)) {
-        if (selectedTask && selectedTask._id === todo._id) {
-          setSelectedTask(result.payload);
+      .then((result) => {
+        if (toggleCompleteAsync.fulfilled.match(result)) {
+          if (selectedTask && selectedTask._id === todo._id) {
+            setSelectedTask(result.payload);
+          }
+        } else {
+          toast.error(`Error updating task: ${result.error.message}`);
         }
-      } else {
-        toast.error(`Error updating task: ${result.error.message}`);
-      }
-    });
+      });
   }
 
   function handleDelete(id) {
@@ -52,18 +50,18 @@ function TodoPage() {
   function confirmDelete() {
     if (todoToDelete) {
       dispatch(deleteTodoAsync(todoToDelete.id))
-      .then((result) => {
-        if (deleteTodoAsync.fulfilled.match(result)) {
-          if (selectedTask && selectedTask._id === todoToDelete.id) {
-            setIsDetailsPanelOpen(false);
-            setSelectedTask(null);
+        .then((result) => {
+          if (deleteTodoAsync.fulfilled.match(result)) {
+            if (selectedTask && selectedTask._id === todoToDelete.id) {
+              setIsDetailsPanelOpen(false);
+              setSelectedTask(null);
+            }
+            setTodoToDelete(null);
+            toast.success(`Task "${todoToDelete.title}" deleted successfully!`);
+          } else {
+            toast.error(`Error deleting task: ${result.error.message}`);
           }
-          setTodoToDelete(null);
-          toast.success(`Task "${todoToDelete.title}" deleted successfully!`);
-        } else {
-          toast.error(`Error deleting task: ${result.error.message}`);
-        }
-      });
+        });
     }
   }
 
@@ -76,13 +74,13 @@ function TodoPage() {
         dueDate: taskData.dueDate,
         tags: taskData.tags,
       }))
-      .then((result) => {
-        if(createTodosAsync.fulfilled.match(result)) {
-          toast.success(`Task "${taskData.title}" created successfully!`);
-        } else {
-          toast.error(`Error creating task: ${result.error.message}`);
-        }
-      });
+        .then((result) => {
+          if (createTodosAsync.fulfilled.match(result)) {
+            toast.success(`Task "${taskData.title}" created successfully!`);
+          } else {
+            toast.error(`Error creating task: ${result.error.message}`);
+          }
+        });
     } else {
       dispatch(
         updateTodoAsync({
@@ -90,16 +88,16 @@ function TodoPage() {
           updates: taskData,
         })
       )
-      .then((result) => {
-        if (updateTodoAsync.fulfilled.match(result)) {
-          if (selectedTask && selectedTask._id === id) {
-            setSelectedTask(result.payload);
+        .then((result) => {
+          if (updateTodoAsync.fulfilled.match(result)) {
+            if (selectedTask && selectedTask._id === id) {
+              setSelectedTask(result.payload);
+            }
+            toast.success(`Task "${taskData.title}" updated successfully!`);
+          } else {
+            toast.error(`Error updating task: ${result.error.message}`);
           }
-          toast.success(`Task "${taskData.title}" updated successfully!`);
-        } else {
-          toast.error(`Error updating task: ${result.error.message}`);
-        }
-      });
+        });
     }
   }
 
@@ -122,72 +120,85 @@ function TodoPage() {
   };
 
   return (
-    <div className={`todo-page-container ${isDetailsPanelOpen ? 'panel-open' : ''}`}>
-      <div className="app-root">
-        <main className="app-main">
-          <motion.section
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="card"
-          >
-            <div className="card-header">
-              <h2>
-                <span>All Tasks</span>
-                <span className="task-count-box">
-                  <span className="task-count-number">{stats.total}</span>
-                  <span className="task-count-label">Total</span>
+    <div className="flex w-full h-full overflow-hidden min-w-0 box-border mb-4">
+      <div className="w-full max-w-full flex-[0_1_100%] min-w-0 h-[calc(100vh-1.25rem)] overflow-hidden pb-4">
+        <div className="grid gap-6 w-full min-w-0 h-full box-border px-12 py-7">
+          <div className="w-full min-w-0 bg-transparent shadow-none rounded-none">
+            <div className="flex justify-start items-center mb-4 py-6 border-b border-gray-200 w-full max-w-full box-border">
+              <h2 className='m-0 text-[2.5rem] flex items-center gap-3 font-semibold leading-none'>
+                <span> All Tasks </span>
+
+                <span className="flex items-center justify-center gap-2 px-3 py-1 ml-3 bg-purple-400 text-white rounded-full text-sm font-medium shrink-0">
+                  <span className="text-sm font-medium leading-none">
+                    {stats.total}
+                  </span>
+
+                  <span className="text-sm font-medium uppercase tracking-wide">
+                    Total
+                  </span>
                 </span>
               </h2>
             </div>
 
-            <div className="search-filter-bar">
-              <div className="filter-buttons">
+            <div className="flex items-center gap-2 mb-4 pb-5 border-b border-gray-200 w-full overflow-hidden overflow-x-auto md:overflow-visible">
+              <div className="flex items-center gap-2 py-2 font-medium cursor-pointer transition-colors">
                 <button
-                  className={filter === 'all' ? 'filter-btn active' : 'filter-btn'}
-                  onClick={() => setFilter('all')}
+                  className={`inline-flex items-center gap-2 px-[1.5rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
+                    ${filter === "all" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
+                  onClick={() => setFilter("all")}
                 >
                   All
                 </button>
 
                 <button
-                  className={filter === 'active' ? 'filter-btn active' : 'filter-btn'}
-                  onClick={() => setFilter('active')}
+                  className={`inline-flex items-center gap-2 px-[1rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
+                    ${filter === "active" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
+                  onClick={() => setFilter("active")}
                 >
                   Active
                 </button>
 
                 <button
-                  className={filter === 'completed' ? 'filter-btn active' : 'filter-btn'}
-                  onClick={() => setFilter('completed')}
+                  className={`inline-flex items-center gap-2 px-[1rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
+                    ${filter === "completed" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
+                  onClick={() => setFilter("completed")}
                 >
                   Completed
                 </button>
               </div>
 
-              <div className="filter-divider"></div>
+              <div className="w-px h-6 bg-gray-200 mx-2 shrink-0"></div>
 
-              <div className="search-box">
-                <Search size={18} />
+              <div className="relative flex items-center shrink-0">
+                <Search
+                  size={18}
+                  className="absolute left-[0.9rem] text-gray-500 pointer-events-none w-[18px] h-[18px]"
+                />
+
                 <input
                   type="text"
                   placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="min-w-[300px] px-[1rem] py-[0.5rem] pl-10 bg-transparent border border-gray-200 rounded-full text-[0.85rem] text-gray-500 transition-all duration-200 focus:bg-indigo-50 focus:text-gray-500 focus:border-gray-400 focus:outline-none hover:bg-gray-50 hover:text-gray-500 hover:border-gray-400"
                 />
               </div>
             </div>
 
             {loading && (
-              <p className="empty-text">Loading tasks...</p>
+              <p className="text-[0.95rem] text-gray-500 mt-4 text-center py-8 px-4">
+                Loading tasks...
+              </p>
             )}
 
             {error && (
-              <p className="error-text">Error: {error}</p>
+              <p className="text-red-500 text-[0.9rem] p-3 bg-red-50 rounded-lg my-2">
+                Error: {error}
+              </p>
             )}
 
             {!loading && !error && filteredTodos.length === 0 && (
-              <p className="empty-text">
+              <p className="text-[0.95rem] text-gray-500 mt-4 text-center py-8 px-4">
                 {searchQuery
                   ? 'No tasks match your search'
                   : filter !== 'all'
@@ -197,18 +208,15 @@ function TodoPage() {
             )}
 
             {!loading && !error && (
-              <AnimatePresence>
-                <ul className="todo-list">
-                  {filteredTodos.map((todo) => (
-                  <motion.li
+              <ul className="custom-scroller list-none pt-1 pb-[100px] max-h-[calc(100vh-200px)] overflow-y-auto w-full box-border">
+                {filteredTodos.map((todo) => (
+                  <li
                     key={todo._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className={`todo-item ${todo.completed ? 'completed' : ''} ${selectedTask && selectedTask._id === todo._id ? 'active' : ''}`}
+                    className={`group flex items-center justify-between gap-3 px-2 py-3 border-b border-gray-200 last:border-b-0 w-full transition-colors hover:bg-indigo-50
+                      ${selectedTask && selectedTask._id === todo._id ? 'bg-indigo-50 border-l-[5px] border-indigo-500 border-b-gray-200' : ''}`}
                   >
                     <div
-                      className="todo-main"
+                      className="flex items-start gap-3 flex-1 min-w-0"
                       onClick={() => {
                         setSelectedTask(todo);
                         setIsCreateMode(false);
@@ -216,21 +224,26 @@ function TodoPage() {
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      <motion.input
+                      <input
                         type="checkbox"
                         checked={todo.completed}
                         onChange={(e) => {
                           e.stopPropagation();
                           handleToggleCompleted(todo);
                         }}
-                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => e.stopPropagation()}
+                        className='mt-[0.3rem] accent-indigo-500 w-[18px] h-[18px] cursor-pointer'
                       />
 
-                      <div className="todo-text">
-                        <div className="todo-title">{todo.title}</div>
+                      <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
+                        <div className={`font-semibold text-base leading-[1.4] break-words max-w-full
+                          ${todo.completed ? 'line-through text-gray-500' : ''}`}
+                        >
+                          {todo.title}
+                        </div>
+
                         {todo.description && (
-                          <div className="todo-description">
+                          <div className="text-sm text-gray-500 leading-[1.5] max-w-full truncate">
                             {todo.description}
                           </div>
                         )}
@@ -239,60 +252,54 @@ function TodoPage() {
 
                     <ChevronRight
                       size={20}
-                      className="todo-arrow"
+                      className={`text-gray-400 shrink-0 transition-transform hover:text-indigo-500 hover:translate-x-0.5 group-hover:text-indigo-500
+                        ${selectedTask && selectedTask._id === todo._id ? 'text-indigo-500' : ''}`}
                       onClick={() => {
                         setSelectedTask(todo);
                         setIsCreateMode(false);
                         setIsDetailsPanelOpen(true);
                       }}
                     />
-                  </motion.li>
-                  ))}
-                </ul>
-              </AnimatePresence>
+                  </li>
+                ))}
+              </ul>
             )}
-          </motion.section>
-        </main>
+          </div>
+        </div>
 
         {!isCreateMode && (
-          <motion.button
-            className="floating-add-btn"
+          <button
+            className={`fixed bottom-8 w-[56px] h-[56px] rounded-full bg-purple-500 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(59,130,246,0.4)] z-[999] transition-all duration-300 hover:bg-purple-600 hover:shadow-[0_6px_16px_rgba(99,102,241,0.5)] hover:-translate-y-[2px]
+            ${isDetailsPanelOpen ? "right-[calc(400px+4rem)]" : "right-8"}`}
             onClick={openCreatePanel}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3 }}
             type="button"
           >
             <Plus size={24} />
-          </motion.button>
+          </button>
         )}
       </div>
 
       <TaskDetailsPanel
         isOpen={isDetailsPanelOpen}
+        task={selectedTask}
         onClose={() => {
           setIsDetailsPanelOpen(false);
           setSelectedTask(null);
           setIsCreateMode(false);
         }}
-        task={selectedTask}
         onDelete={handleDelete}
         onSave={handleSaveTask}
       />
 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
+        itemName={todoToDelete?.title}
         onClose={() => {
           setIsDeleteModalOpen(false);
           setTodoToDelete(null);
         }}
         onConfirm={confirmDelete}
-        taskTitle={todoToDelete?.title}
       />
     </div>
   );
 }
-
-export default TodoPage;
