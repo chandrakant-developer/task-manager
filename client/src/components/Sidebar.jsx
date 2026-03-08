@@ -1,32 +1,17 @@
 import { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { createListAsync } from '../store/slices/listSlice';
 import { createTagAsync } from '../store/slices/tagSlice';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Calendar,
-  CalendarDays,
-  Clock,
-  Star,
-  Settings,
-  LogOut,
-  Folder,
-  Plus,
-  ChevronRight,
-  User,
-} from 'lucide-react';
+import { Calendar, CalendarDays, Clock, Star, Folder, Plus, ChevronRight, User, } from 'lucide-react';
 import { tagColors, listColors } from '../constants/colors';
-import { DEFAULT_TASK_MENU_ITEMS } from '../constants/defaults';
-import AddItemModal from './AddItemModal';
+import { DEFAULT_TASKS } from '../constants/defaults';
+import { AddItemModal, UserMenu } from "../components";
 
-function Sidebar() {
+export function Sidebar() {
   const todos = useSelector((state) => state.todos.todos);
   const lists = useSelector((state) => state.lists.lists);
   const tags = useSelector((state) => state.tags.tags);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isAddListModalOpen, setIsAddListModalOpen] = useState(false);
   const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false);
@@ -89,227 +74,205 @@ function Sidebar() {
   };
 
   return (
-    <aside className="sidebar" ref={sidebarRef}>
-      <div className="sidebar-content">
-        <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <motion.div
-              className="sidebar-logo"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-            >
-              ✓
-            </motion.div>
-
-            <div>
-              <h2 className="sidebar-title">Task Manager</h2>
-              <p className="sidebar-subtitle"> Organize your daily tasks efficiently </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-scrollable">
-          <div className="sidebar-section">
-            <div className="sidebar-section-header">
-              <span>Tasks</span>
-            </div>
-
-            <ul className="sidebar-sublist">
-              {DEFAULT_TASK_MENU_ITEMS.map((menuItem) => {
-                const IconComponent = getTaskMenuIcon(menuItem.id);
-                const count = getTaskMenuCount(menuItem.id);
-
-                return (
-                  <li key={menuItem.id}>
-                    <button className="sidebar-item" title={menuItem.label}>
-                      <span>
-                        <IconComponent size={16} />
-                        <span>{menuItem.label}</span>
-                      </span>
-
-                      {count > 0 && (
-                        <span className="sidebar-item-count">{count}</span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="sidebar-section">
-            <div className="sidebar-section-header">
-              <span>Lists</span>
-              <button
-                className="sidebar-add-btn"
-                onClick={() => setIsAddListModalOpen(true)}
-                title="Add New List"
-              >
-                <Plus size={14} />
-                <span>Add List</span>
-              </button>
-            </div>
-
-            <ul className="sidebar-sublist">
-              {lists.map((list, index) => {
-                const listCount = getListCount(list.name);
-
-                return (
-                  <li key={list._id}>
-                    <button className="sidebar-item" title={list.name}>
-                      <span>
-                        <Folder
-                          size={16}
-                          style={{
-                            color: listColors[index % listColors.length],
-                            fill: listColors[index % listColors.length],
-                          }}
-                        />
-                        <span>{list.name}</span>
-                      </span>
-
-                      {listCount > 0 && (
-                        <span className="sidebar-item-count">{listCount}</span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          <div className="sidebar-section">
-            <div className="sidebar-section-header">
-              <span>Tags</span>
-              <button
-                className="sidebar-add-btn"
-                onClick={() => setIsAddTagModalOpen(true)}
-                title="Add New Tag"
-              >
-                <Plus size={14} />
-                <span>Add Tag</span>
-              </button>
-            </div>
-
-            <div className="sidebar-tags-container">
-              {tags.map((tag, index) => {
-                const tagColor = tagColors[index % tagColors.length];
-                return (
-                  <button
-                    key={tag._id}
-                    className="sidebar-tag"
-                    title={tag.name}
-                    style={{
-                      backgroundColor: tagColor.bg,
-                      color: tagColor.text,
-                    }}
-                  >
-                    <span>{tag.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-bottom">
-          <div className="sidebar-user-section">
-            <button
-              ref={userButtonRef}
-              className="sidebar-user-btn"
-              onClick={() => {
-                if (userButtonRef.current && sidebarRef.current) {
-                  const sidebarRect = sidebarRef.current.getBoundingClientRect();
-                  setMenuPosition({
-                    bottom: window.innerHeight - sidebarRect.bottom,
-                    left: sidebarRect.right,
-                  });
-                }
-                setIsUserMenuOpen(!isUserMenuOpen);
-              }}
-            >
-              <div className="sidebar-user-avatar">
-                <User size={18} />
+    <>
+      <aside
+        className="fixed left-4 top-4 w-[320px] h-[calc(100vh-2rem)] bg-white/95 border border-gray-200 rounded-lg backdrop-blur-md z-[1000] flex flex-col overflow-hidden shadow-md hidden md:block"
+        ref={sidebarRef}
+      >
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-6 border-b border-gray-200 gap-3 shrink-0">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 rounded-full bg-indigo-500 inline-flex items-center justify-center text-lg text-white shadow-lg cursor-pointer shrink-0">
+                ✓
               </div>
 
-              <div className="sidebar-user-info">
-                <span className="sidebar-user-name">Chandrakant Patil</span>
-                <span className="sidebar-user-email"> chandrakant.patil@example.com </span>
+              <div>
+                <h2 className="mb-[0.15rem] text-[1.4rem] font-bold text-indigo-500">
+                  Task Manager
+                </h2>
+
+                <p className="text-xs text-gray-500 leading-[1.3] truncate">
+                  Organize your daily tasks efficiently
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="custom-scroller flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+            <div className="mt-2 mb-3 pr-3">
+              <div className="w-full flex items-center justify-between py-2 pl-5 text-gray-500 text-xs font-semibold rounded-lg text-left uppercase tracking-wide">
+                Tasks
               </div>
 
-              <ChevronRight
-                size={24}
-                className={`sidebar-user-chevron ${isUserMenuOpen ? 'open' : ''}`}
-              />
-            </button>
-          </div>
-        </div>
+              <ul className="list-none pl-6 overflow-hidden space-y-[0.05rem]">
+                {DEFAULT_TASKS.map((menuItem) => {
+                  const IconComponent = getTaskMenuIcon(menuItem.id);
+                  const count = getTaskMenuCount(menuItem.id);
 
-        {createPortal(
-          <AnimatePresence>
-            {isUserMenuOpen && (
-              <>
-                <motion.div
-                  className="sidebar-user-menu-overlay"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsUserMenuOpen(false)}
-                />
+                  return (
+                    <li key={menuItem.id}>
+                      <button
+                        className="w-full flex items-center justify-between gap-2 px-2 py-2 text-sm text-gray-500 rounded-lg cursor-pointer transition-colors hover:bg-indigo-50 hover:text-indigo-500"
+                        title={menuItem.label}
+                      >
+                        <span className='flex items-center gap-2 flex-1'>
+                          <IconComponent size={16} />
+                          <span>{menuItem.label}</span>
+                        </span>
 
-                <motion.div
-                  className="sidebar-user-menu"
-                  style={{
-                    position: 'fixed',
-                    bottom: `${menuPosition.bottom}px`,
-                    left: `${menuPosition.left}px`,
-                  }}
-                  initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                        {count > 0 && (
+                          <span className="flex items-center justify-center w-7 h-5 bg-gray-200 text-gray-500 rounded text-xs font-semibold leading-none shrink-0">
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="mb-3 pr-3">
+              <div className="w-full flex items-center justify-between py-2 pl-5 text-gray-500 text-xs font-semibold rounded-lg text-left uppercase tracking-wide">
+                Lists
+                <button
+                  className="flex items-center gap-1 px-2 py-1 text-indigo-500 text-xs font-medium rounded cursor-pointer transition-opacity duration-200 shrink-0 ml-auto hover:opacity-90"
+                  onClick={() => setIsAddListModalOpen(true)}
+                  title="Add New List"
                 >
-                  <button
-                    className="sidebar-user-menu-item"
-                    title="Settings"
-                    onClick={() => {
-                      navigate('/settings');
-                      setIsUserMenuOpen(false);
-                    }}
-                  >
-                    <Settings size={18} />
-                    <span>Settings</span>
-                  </button>
+                  <Plus size={14} />
+                  <span>Add List</span>
+                </button>
+              </div>
 
-                  <button className="sidebar-user-menu-item" title="Sign Out">
-                    <LogOut size={18} />
-                    <span>Sign Out</span>
-                  </button>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>,
-          document.body
-        )}
+              <ul className="list-none pl-6 overflow-hidden space-y-[0.05rem]">
+                {lists.map((list, index) => {
+                  const listCount = getListCount(list.name);
 
-        <AddItemModal
-          isOpen={isAddListModalOpen}
-          onClose={() => setIsAddListModalOpen(false)}
-          onSave={handleAddList}
-          title="Add New List"
-          placeholder="Enter list name"
-        />
+                  return (
+                    <li key={list._id}>
+                      <button
+                        className="w-full flex items-center justify-between gap-2 px-2 py-2 text-sm text-gray-500 rounded-lg cursor-pointer transition-colors hover:bg-indigo-50 hover:text-indigo-500"
+                        title={list.name}
+                      >
+                        <span className='flex items-center gap-2 flex-1'>
+                          <Folder
+                            size={16}
+                            style={{
+                              color: listColors[index % listColors.length],
+                              fill: listColors[index % listColors.length],
+                            }}
+                          />
+                          <span>{list.name}</span>
+                        </span>
 
-        <AddItemModal
-          isOpen={isAddTagModalOpen}
-          onClose={() => setIsAddTagModalOpen(false)}
-          onSave={handleAddTag}
-          title="Add New Tag"
-          placeholder="Enter tag name"
-        />
-      </div>
-    </aside>
+                        {listCount > 0 && (
+                          <span className="flex items-center justify-center w-7 h-5 bg-gray-200 text-gray-500 rounded text-xs font-semibold leading-none shrink-0">
+                            {listCount}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="mb-4 pr-3">
+              <div className="w-full flex items-center justify-between py-2 pl-5 text-gray-500 text-xs font-semibold rounded-lg text-left uppercase tracking-wide">
+                Tags
+                <button
+                  className="flex items-center gap-1 px-2 py-1 text-indigo-500 text-xs font-medium rounded cursor-pointer transition-opacity duration-200 shrink-0 ml-auto hover:opacity-90"
+                  onClick={() => setIsAddTagModalOpen(true)}
+                  title="Add New Tag"
+                >
+                  <Plus size={14} />
+                  <span>Add Tag</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2 px-5 mt-2">
+                {tags.map((tag, index) => {
+                  const tagColor = tagColors[index % tagColors.length];
+                  return (
+                    <button
+                      key={tag._id}
+                      className="inline-flex items-center gap-1 ml-2 px-3 py-1.5 bg-indigo-500 text-gray-900 border border-black/10 rounded-md text-sm font-medium cursor-pointer whitespace-nowrap transition hover:opacity-90 hover:-translate-y-px hover:shadow-sm"
+                      title={tag.name}
+                      style={{
+                        backgroundColor: tagColor.bg,
+                        color: tagColor.text,
+                      }}
+                    >
+                      <span>{tag.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="sticky bottom-0 z-10 mt-auto px-5 py-3 border-t border-gray-200 flex flex-col gap-2 bg-white/95 backdrop-blur-md shrink-0">
+            <div className="relative z-[50]">
+              <button
+                ref={userButtonRef}
+                className="group w-full flex items-center gap-2 py-2 rounded-lg cursor-pointer transition-colors text-gray-900"
+                onClick={() => {
+                  if (userButtonRef.current && sidebarRef.current) {
+                    const sidebarRect = sidebarRef.current.getBoundingClientRect();
+                    setMenuPosition({
+                      bottom: window.innerHeight - sidebarRect.bottom,
+                      left: sidebarRect.right,
+                    });
+                  }
+                  setIsUserMenuOpen(!isUserMenuOpen);
+                }}
+              >
+                <div className="w-8 h-8 rounded-full bg-indigo-400 flex items-center justify-center text-white shrink-0">
+                  <User size={18} />
+                </div>
+
+                <div className="flex flex-col items-start gap-0 flex-1 min-w-0 text-left">
+                  <span className="text-sm font-semibold text-gray-900 leading-tight w-full truncate">
+                    Chandrakant Patil
+                  </span>
+
+                  <span className="text-xs text-gray-500 leading-[1.2] w-full truncate">
+                    chandrakant.patil@example.com
+                  </span>
+                </div>
+
+                <ChevronRight
+                  size={24}
+                  className={`text-gray-500 p-1 rounded shrink-0 transition-colors group-hover:bg-indigo-50 group-hover:text-indigo-500 ${isUserMenuOpen ? 'open' : ''}`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <UserMenu
+            isOpen={isUserMenuOpen}
+            menuPosition={menuPosition}
+            onClose={() => setIsUserMenuOpen(false)}
+          />
+
+          <AddItemModal
+            title="Add New List"
+            placeholder="Enter list name"
+            isOpen={isAddListModalOpen}
+            onClose={() => setIsAddListModalOpen(false)}
+            onSave={handleAddList}
+          />
+
+          <AddItemModal
+            title="Add New List"
+            placeholder="Enter list name"
+            isOpen={isAddTagModalOpen}
+            onClose={() => setIsAddTagModalOpen(false)}
+            onSave={handleAddTag}
+          />
+        </div>
+      </aside>
+    </>
   );
 }
-
-export default Sidebar;
