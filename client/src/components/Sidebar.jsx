@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createListAsync } from '../store/slices/listSlice';
 import { createTagAsync } from '../store/slices/tagSlice';
-import { Calendar, CalendarDays, Clock, Star, Folder, Plus, ChevronRight, User, } from 'lucide-react';
+import { Calendar, CalendarDays, Clock, Star, Folder, Plus, ChevronRight, User, CheckSquare } from 'lucide-react';
 import { tagColors, listColors } from '../constants/colors';
 import { DEFAULT_TASKS } from '../constants/defaults';
 import { AddItemModal, UserMenu } from "../components";
@@ -81,17 +81,17 @@ export function Sidebar() {
       >
         <div className="flex flex-col h-full overflow-hidden">
           <div className="flex items-center justify-between px-5 py-6 border-b border-gray-200 gap-3 shrink-0">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 rounded-full bg-indigo-500 inline-flex items-center justify-center text-lg text-white shadow-lg cursor-pointer shrink-0">
-                ✓
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500 inline-flex items-center justify-center text-white shrink-0">
+                <CheckSquare size={26} />
               </div>
 
-              <div>
-                <h2 className="mb-[0.15rem] text-[1.4rem] font-bold text-indigo-500">
+              <div className="min-w-0">
+                <h2 className="mb-[0.15rem] text-[1.4rem] font-bold text-gray-900">
                   Task Manager
                 </h2>
 
-                <p className="text-xs text-gray-500 leading-[1.3] truncate">
+                <p className="text-xs text-gray-600 leading-[1.3] truncate">
                   Organize your daily tasks efficiently
                 </p>
               </div>
