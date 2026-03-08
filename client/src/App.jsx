@@ -1,21 +1,43 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { fetchTodosAsync } from './store/slices/todoSlice';
 import { fetchListsAsync } from './store/slices/listSlice';
 import { fetchTagsAsync } from './store/slices/tagSlice';
 import { Sidebar } from './components';
-import { TodoPage, SettingsPage } from './pages';
+import { TodoPage, SettingsPage, RegisterPage, LoginPage, HomePage } from './pages';
 
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthRoute = location.pathname === '/register' || location.pathname === '/login';
+  const isLandingRoute = location.pathname === '/';
 
   useEffect(() => {
-    dispatch(fetchTodosAsync());
-    dispatch(fetchListsAsync());
-    dispatch(fetchTagsAsync());
-  }, [dispatch]);
+    if (!isAuthRoute && !isLandingRoute) {
+      dispatch(fetchTodosAsync());
+      dispatch(fetchListsAsync());
+      dispatch(fetchTagsAsync());
+    }
+  }, [dispatch, isAuthRoute, isLandingRoute]);
+
+  if (isAuthRoute) {
+    return (
+      <Routes>
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    );
+  }
+
+  if (isLandingRoute) {
+    return (
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[linear-gradient(135deg,#eef2ff_0%,#f0f9ff_50%,#f8fafc_100%)] bg-fixed">
@@ -23,8 +45,8 @@ function App() {
       
       <main className="flex flex-1 relative h-screen overflow-hidden ml-[calc(320px+1rem)] min-w-0 max-w-full max-md:ml-0">
         <Routes>
-          <Route path="/" element={<TodoPage />} />
-          <Route path="/settings" element={<SettingsPage onClose={() => navigate('/')} />} />
+          <Route path="/tasks" element={<TodoPage />} />
+          <Route path="/settings" element={<SettingsPage onClose={() => navigate('/tasks')} />} />
         </Routes>
       </main>
     </div>
