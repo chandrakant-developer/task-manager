@@ -1,4 +1,4 @@
-export const tagColors = [
+export const TAG_COLORS = [
   { bg: '#dbeafe', text: '#1e40af' },
   { bg: '#d1fae5', text: '#065f46' },
   { bg: '#fef3c7', text: '#92400e' },
@@ -9,4 +9,4 @@ export const tagColors = [
   { bg: '#fed7aa', text: '#9a3412' },
 ];
 
-export const listColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+export const LIST_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];

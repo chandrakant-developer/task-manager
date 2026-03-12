@@ -1,13 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import todosReducer from './slices/todoSlice';
 import listsReducer from './slices/listSlice';
 import tagsReducer from './slices/tagSlice';
+import todoReducer from './slices/todoSlice';
 
 const store = configureStore({
     reducer: {
-        todos: todosReducer,
         lists: listsReducer,
         tags: tagsReducer,
+        tasks: todoReducer,
     },
 });
 
