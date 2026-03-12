@@ -1,41 +1,43 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { X } from 'lucide-react';
+
+import { useSelector } from 'react-redux';
 
 export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
   const lists = useSelector((state) => state.lists.lists);
   const tags = useSelector((state) => state.tags.tags);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [selectedList, setSelectedList] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [selectedTags, setSelectedTags] = useState([]);
+
+  const [updatedTitle, setUpdatedTitle] = useState('');
+  const [updatedDescription, setUpdatedDescription] = useState('');
+  const [updatedList, setUpdatedList] = useState('');
+  const [updatedDueDate, setUpdatedDueDate] = useState('');
+  const [updatedTags, setUpdatedTags] = useState([]);
 
   useEffect(() => {
     if (task) {
-      setEditTitle(task.title || '');
-      setEditDescription(task.description || '');
-      setSelectedList(task.list || '');
-      setDueDate(task.dueDate || '');
-      setSelectedTags(task.tags || []);
+      setUpdatedTitle(task.title || '');
+      setUpdatedDescription(task.description || '');
+      setUpdatedList(task.list || '');
+      setUpdatedDueDate(task.dueDate || '');
+      setUpdatedTags(task.tags || []);
     } else {
-      setEditTitle('');
-      setEditDescription('');
-      setSelectedList('');
-      setDueDate('');
-      setSelectedTags([]);
+      setUpdatedTitle('');
+      setUpdatedDescription('');
+      setUpdatedList('');
+      setUpdatedDueDate('');
+      setUpdatedTags([]);
     }
   }, [task]);
 
   function handleSave() {
-    if (!editTitle.trim()) return;
+    if (!updatedTitle.trim()) return;
 
     const taskData = {
-      title: editTitle.trim(),
-      description: editDescription.trim(),
-      list: selectedList,
-      dueDate: dueDate,
-      tags: selectedTags,
+      title: updatedTitle.trim(),
+      description: updatedDescription.trim(),
+      list: updatedList,
+      dueDate: updatedDueDate,
+      tags: updatedTags,
     };
 
     if (task) {
@@ -44,16 +46,16 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
       onSave(null, taskData);
     }
 
-    setEditTitle('');
-    setEditDescription('');
-    setSelectedList('');
-    setDueDate('');
-    setSelectedTags([]);
+    setUpdatedTitle('');
+    setUpdatedDescription('');
+    setUpdatedList('');
+    setUpdatedDueDate('');
+    setUpdatedTags([]);
     onClose();
   }
 
   function toggleTag(tagName) {
-    setSelectedTags((prev) =>
+    setUpdatedTags((prev) =>
       prev.includes(tagName)
         ? prev.filter((t) => t !== tagName)
         : [...prev, tagName]
@@ -93,8 +95,8 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
                 <input
                   id="task-title"
                   type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
+                  value={updatedTitle}
+                  onChange={(e) => setUpdatedTitle(e.target.value)}
                   className="w-full px-3 py-3 rounded-md border border-gray-200 bg-white text-base text-gray-900 outline-none transition-colors focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Title"
                 />
@@ -110,8 +112,8 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
 
                 <textarea
                   id="task-description"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
+                  value={updatedDescription}
+                  onChange={(e) => setUpdatedDescription(e.target.value)}
                   className="w-full min-h-[100px] px-3 py-3 rounded-md border border-gray-200 bg-white text-base text-gray-900 outline-none transition-colors resize-y focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Description (optional)"
                   rows="4"
@@ -129,8 +131,8 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
                 <div className="relative flex items-center gap-2 flex-1">
                   <select
                     id="task-list"
-                    value={selectedList}
-                    onChange={(e) => setSelectedList(e.target.value)}
+                    value={updatedList}
+                    onChange={(e) => setUpdatedList(e.target.value)}
                     className="w-full px-3 py-3 rounded-md border border-gray-200 bg-white text-base text-gray-900 outline-none transition-colors appearance-none cursor-pointer focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                   >
                     <option value="">Select List</option>
@@ -155,8 +157,8 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
                   <input
                     id="task-due-date"
                     type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    value={updatedDueDate}
+                    onChange={(e) => setUpdatedDueDate(e.target.value)}
                     className="w-full px-3 py-3 rounded-md border border-gray-200 bg-white text-base text-gray-900 outline-none transition-colors focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                     placeholder="Due Date"
                   />
@@ -174,7 +176,7 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
                 <div className="relative flex items-center gap-2 flex-1">
                   <div className="flex flex-wrap gap-2 w-full">
                     {tags.map((tag) => {
-                      const isSelected = selectedTags.includes(tag.name);
+                      const isSelected = updatedTags.includes(tag.name);
                       return (
                         <button
                           key={tag._id}
@@ -199,7 +201,7 @@ export function TaskDetailsPanel({ isOpen, onClose, task, onDelete, onSave, }) {
               <button
                 className="w-full px-4 py-3 rounded-md border border-transparent bg-indigo-500 text-white text-sm font-medium transition-all duration-200 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleSave}
-                disabled={!editTitle.trim()}
+                disabled={!updatedTitle.trim()}
               >
                 {isCreateMode ? 'Create Task' : 'Save Changes'}
               </button>

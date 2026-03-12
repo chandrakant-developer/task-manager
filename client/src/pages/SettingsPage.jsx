@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { X, Plus, Trash2, Folder, Tag as TagIcon, Settings as SettingsIcon } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createListAsync, deleteListAsync } from '../store/slices/listSlice';
-import { createTagAsync, deleteTagAsync } from '../store/slices/tagSlice';
 import { AddItemModal, DeleteConfirmModal } from '../components';
-import { listColors, tagColors } from '../constants/colors';
+import { TAG_COLORS, LIST_COLORS } from '../constants';
+
+import { addList, deleteList } from "../store/slices/listSlice";
+import { addTag, deleteTag } from "../store/slices/tagSlice";
+import { useSelector, useDispatch } from "react-redux";
 
 export function SettingsPage({ onClose }) {
   const lists = useSelector((state) => state.lists.lists);
@@ -16,6 +16,7 @@ export function SettingsPage({ onClose }) {
   const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false);
   const [isDeleteListModalOpen, setIsDeleteListModalOpen] = useState(false);
   const [isDeleteTagModalOpen, setIsDeleteTagModalOpen] = useState(false);
+  
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const defaultLists = lists.filter((list) => list.isDefault);
@@ -32,28 +33,10 @@ export function SettingsPage({ onClose }) {
       .join(' ');
   }
 
-  function handleAddList(newListName) {
-    const formattedName = toTitleCase(newListName.trim());
-    dispatch(createListAsync(formattedName))
-      .then((result) => {
-        if (createListAsync.fulfilled.match(result)) {
-          toast.success(`List "${formattedName}" created successfully!`);
-        } else {
-          toast.error(`Error creating list: ${result.error.message}`);
-        }
-      });
-  }
+  function handleAddList(name) {
+    const formatted = toTitleCase(name.trim());
 
-  function handleAddTag(newTagName) {
-    const formattedName = toTitleCase(newTagName.trim());
-    dispatch(createTagAsync(formattedName))
-      .then((result) => {
-        if (createTagAsync.fulfilled.match(result)) {
-          toast.success(`Tag "${formattedName}" created successfully!`);
-        } else {
-          toast.error(`Error creating tag: ${result.error.message}`);
-        }
-      });
+    dispatch(addList(formatted));
   }
 
   function handleDeleteList(id, name, isDefault) {
@@ -65,6 +48,18 @@ export function SettingsPage({ onClose }) {
     setIsDeleteListModalOpen(true);
   }
 
+  function confirmDeleteList() {
+    dispatch(deleteList(itemToDelete.id));
+    setIsDeleteListModalOpen(false);
+    setItemToDelete(null);
+  }
+
+  function handleAddTag(name) {
+    const formatted = toTitleCase(name.trim());
+
+    dispatch(addTag(formatted));
+  }
+
   function handleDeleteTag(id, name, isDefault) {
     if (isDefault) {
       toast.error('Cannot delete default tag');
@@ -74,34 +69,10 @@ export function SettingsPage({ onClose }) {
     setIsDeleteTagModalOpen(true);
   }
 
-  function confirmDeleteList() {
-    if (itemToDelete && itemToDelete.type === 'list') {
-      dispatch(deleteListAsync(itemToDelete.id))
-        .then((result) => {
-          if (deleteListAsync.fulfilled.match(result)) {
-            toast.success(`List "${itemToDelete.name}" deleted successfully!`);
-          } else {
-            toast.error(`Error deleting list: ${result.error.message}`);
-          }
-          setIsDeleteListModalOpen(false);
-          setItemToDelete(null);
-        });
-    }
-  }
-
   function confirmDeleteTag() {
-    if (itemToDelete && itemToDelete.type === 'tag') {
-      dispatch(deleteTagAsync(itemToDelete.id))
-        .then((result) => {
-          if (deleteTagAsync.fulfilled.match(result)) {
-            toast.success(`Tag "${itemToDelete.name}" deleted successfully!`);
-          } else {
-            toast.error(`Error deleting tag: ${result.error.message}`);
-          }
-          setIsDeleteTagModalOpen(false);
-          setItemToDelete(null);
-        });
-    }
+    dispatch(deleteTag(itemToDelete.id));
+    setIsDeleteTagModalOpen(false);
+    setItemToDelete(null);
   }
 
   return (
@@ -157,7 +128,7 @@ export function SettingsPage({ onClose }) {
 
                   <div className="flex flex-wrap gap-4">
                     {defaultLists.map((list, index) => {
-                      const listColor = listColors[index % listColors.length];
+                      const listColor = LIST_COLORS[index % LIST_COLORS.length];
                       return (
                         <div
                           key={list._id}
@@ -184,7 +155,7 @@ export function SettingsPage({ onClose }) {
                   {userLists.length > 0 ? (
                     <div className="flex flex-wrap gap-4">
                       {userLists.map((list, index) => {
-                        const listColor = listColors[(defaultLists.length + index) % listColors.length];
+                        const listColor = LIST_COLORS[(defaultLists.length + index) % LIST_COLORS.length];
                         return (
                           <div
                             key={list._id}
@@ -211,7 +182,7 @@ export function SettingsPage({ onClose }) {
                       })}
                     </div>
                   ) : (
-                    <p className="settings-empty-text">No custom lists yet. Create your first list!</p>
+                    <p className="text-sm text-gray-500">No custom lists yet. Create your first list!</p>
                   )}
                 </div>
               </div>
@@ -245,7 +216,7 @@ export function SettingsPage({ onClose }) {
 
                   <div className="flex flex-wrap gap-3">
                     {defaultTags.map((tag, index) => {
-                      const tagColor = tagColors[index % tagColors.length];
+                      const tagColor = TAG_COLORS[index % TAG_COLORS.length];
                       return (
                         <div
                           key={tag._id}
@@ -272,7 +243,7 @@ export function SettingsPage({ onClose }) {
                   {userTags.length > 0 ? (
                     <div className="flex flex-wrap gap-3">
                       {userTags.map((tag, index) => {
-                        const tagColor = tagColors[(defaultTags.length + index) % tagColors.length];
+                        const tagColor = TAG_COLORS[(defaultTags.length + index) % TAG_COLORS.length];
                         return (
                           <div
                             key={tag._id}
@@ -299,7 +270,7 @@ export function SettingsPage({ onClose }) {
                       })}
                     </div>
                   ) : (
-                    <p className="settings-empty-text">No custom tags yet. Create your first tag!</p>
+                    <p className="text-sm text-gray-500">No custom tags yet. Create your first tag!</p>
                   )}
                 </div>
               </div>

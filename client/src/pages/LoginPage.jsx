@@ -1,62 +1,63 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CheckSquare, Mail, Lock } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { loginAPI } from '../services/api';
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-  });
+  const [form, setForm] = useState({ email: '', password: '' });
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: null
+      }));
     }
   }
 
   function validate() {
     const next = {};
-    if (!form.email.trim()) next.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = 'Enter a valid email';
-    if (!form.password) next.password = 'Password is required';
+
+    if (!form.email.trim()) {
+      next.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      next.email = 'Enter a valid email';
+    }
+
+    if (!form.password) {
+      next.password = 'Password is required';
+    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   }
 
   function handleSubmit(e) {
     e.preventDefault();
+
     if (!validate()) return;
 
-    setLoading(true);
-    loginAPI({ email: form.email.trim(), password: form.password })
-      .then(() => {
-        toast.success('Signed in successfully!');
-        navigate('/tasks');
-      })
-      .catch((err) => {
-        const message = err.response?.data?.message || err.message || 'Sign in failed';
-        toast.error(message);
-      })
-      .finally(() => setLoading(false));
+    console.log('Login Form Data:', form);
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[linear-gradient(135deg,#eef2ff_0%,#f0f9ff_50%,#f8fafc_100%)] bg-fixed">
       <div className="w-full max-w-[1200px] flex flex-col md:flex-row items-center gap-10 md:gap-20">
         <div className="flex flex-col items-center text-center flex-1 min-w-0 md:max-w-[620px]">
-          <Link to="/">
-            <div className="w-20 h-20 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg mb-6">
-              <CheckSquare size={40} />
-            </div>
+          <Link
+            className="w-20 h-20 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg mb-6"
+            to="/"
+          >
+            <CheckSquare size={40} />
           </Link>
-          
+
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight mb-4">
             Task Manager
           </h1>
@@ -72,80 +73,82 @@ export function LoginPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-1">
                 Sign in
               </h2>
-              
+
               <p className="text-sm text-gray-600 mb-6">
                 Welcome back to Task Manager
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
                   </label>
 
                   <div className="relative">
                     <Mail
                       size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
 
                     <input
-                      id="email"
                       name="email"
                       type="email"
                       value={form.email}
                       onChange={handleChange}
                       placeholder="you@example.com"
-                      autoComplete="email"
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border bg-white text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                        ${errors.email ? 'border-red-400' : 'border-gray-200'} `}
+                        ${errors.email ? 'border-red-400' : 'border-gray-200'}`}
                     />
                   </div>
 
-                  {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Password
                   </label>
 
                   <div className="relative">
                     <Lock
                       size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
 
                     <input
-                      id="password"
                       name="password"
                       type="password"
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Your password"
-                      autoComplete="current-password"
                       className={`w-full pl-10 pr-4 py-3 rounded-lg border bg-white text-gray-900 placeholder:text-gray-400 outline-none transition-colors focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                        ${errors.password ? 'border-red-400' : 'border-gray-200'} `}
+                        ${errors.password ? 'border-red-400' : 'border-gray-200'}`}
                     />
                   </div>
 
-                  {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600"
                 >
-                  {loading ? 'Signing in...' : 'Sign in'}
+                  Sign in
                 </button>
               </form>
             </div>
 
             <div className="px-8 py-4 border-t border-gray-200 bg-gray-50/80">
               <p className="text-center text-sm text-gray-600">
-                Don&apos;t have an account? {' '}
-                <Link to="/register" className="font-medium text-indigo-500 hover:text-indigo-600">
+                Don&apos;t have an account?{' '}
+                <Link
+                  className="font-medium text-indigo-500 hover:text-indigo-600"
+                  to="/register"
+                >
                   Create account
                 </Link>
               </p>

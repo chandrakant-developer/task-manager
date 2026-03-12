@@ -1,4 +1,4 @@
-export { TodoPage } from './TodoPage';
+export { TaskPage } from './TaskPage';
 export { SettingsPage } from './SettingsPage';
 export { RegisterPage } from './RegisterPage';
 export { LoginPage } from './LoginPage';

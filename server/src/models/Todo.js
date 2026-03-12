@@ -26,14 +26,6 @@ const todoSchema = new mongoose.Schema(
     dueDate: {
       type: String,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
     timestamps: true,
