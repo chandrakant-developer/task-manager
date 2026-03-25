@@ -1,8 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckSquare, Mail, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser } from "../store/slices/auth.slice";
+import { loginAPI } from "../services/api";
 
 export function LoginPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const user = useSelector((state) => state.user.user);
+
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({ email: '', password: '' });
 
@@ -39,12 +49,29 @@ export function LoginPage() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-
     if (!validate()) return;
 
-    console.log('Login Form Data:', form);
+    try {
+      const data = await loginAPI({
+        email: form.email,
+        password: form.password
+      });
+
+      toast.success("Logged in successfully");
+      dispatch(setUser(data.user));
+      navigate("/tasks");
+    } catch (error) {
+      console.error(error);
+
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error?.message ||
+        "Something went wrong";
+
+      toast.error(message);
+    }
   }
 
   return (

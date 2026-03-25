@@ -1,25 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  tags: [
-    { _id: "1", name: "Important", isDefault: true },
-    { _id: "2", name: "Low Priority", isDefault: true },
-    { _id: "3", name: "In Progress", isDefault: true },
-    { _id: "4", name: "Blocked", isDefault: true },
-    { _id: "5", name: "Planning", isDefault: true }
-  ]
+  tags: [],
+  loading: false,
+  error: null,
 };
 
 const tagSlice = createSlice({
   name: 'tags',
   initialState,
   reducers: {
+    setTag: (state, action) => {
+      state.tags = action.payload;
+    },
     addTag: (state, action) => {
-      const newTag = {
-        _id: Date.now().toString(),
-        name: action.payload
-      };
-      state.tags.push(newTag);
+      state.tags.push(action.payload);
     },
     deleteTag: (state, action) => {
       state.tags = state.tags.filter(
@@ -29,6 +24,6 @@ const tagSlice = createSlice({
   }
 });
 
-export const { addTag, deleteTag } = tagSlice.actions;
+export const { setTag, addTag, deleteTag } = tagSlice.actions;
 
 export default tagSlice.reducer;

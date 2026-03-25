@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckSquare, Mail, Lock, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
+import { registerAPI } from '../services/api';
+import { useSelector } from 'react-redux';
 
 export function RegisterPage() {
+  const navigate = useNavigate();
+
+  const user = useSelector((state) => state.user.user);
+
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     name: '',
@@ -54,12 +62,29 @@ export function RegisterPage() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-
     if (!validate()) return;
 
-    console.log('Register Form Data:', form);
+    try {
+      const data = await registerAPI({
+        name: form.name,
+        email: form.email,
+        password: form.password
+      });
+
+      toast.success("User registered successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error(error);
+
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.error?.message ||
+        "Something went wrong";
+
+      toast.error(message);
+    }
   }
 
   return (

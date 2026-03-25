@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { X, Plus, Trash2, Folder, Tag as TagIcon, Settings as SettingsIcon } from 'lucide-react';
 import { AddItemModal, DeleteConfirmModal } from '../components';
 import { TAG_COLORS, LIST_COLORS } from '../constants';
-
-import { addList, deleteList } from "../store/slices/listSlice";
-import { addTag, deleteTag } from "../store/slices/tagSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { handleAddList, confirmDeleteList } from "../helpers/list.helper";
+import { handleAddTag, confirmDeleteTag } from '../helpers/tag.helper';
 
 export function SettingsPage({ onClose }) {
+  const user = useSelector((state) => state.user.user);
   const lists = useSelector((state) => state.lists.lists);
   const tags = useSelector((state) => state.tags.tags);
   const dispatch = useDispatch();
@@ -33,10 +33,9 @@ export function SettingsPage({ onClose }) {
       .join(' ');
   }
 
-  function handleAddList(name) {
+  function handleAddListClick(name) {
     const formatted = toTitleCase(name.trim());
-
-    dispatch(addList(formatted));
+    handleAddList(dispatch, formatted, user);
   }
 
   function handleDeleteList(id, name, isDefault) {
@@ -44,20 +43,20 @@ export function SettingsPage({ onClose }) {
       toast.error('Cannot delete default list');
       return;
     }
-    setItemToDelete({ id, name, type: 'list' });
+
+    setItemToDelete({ id, name });
     setIsDeleteListModalOpen(true);
   }
 
-  function confirmDeleteList() {
-    dispatch(deleteList(itemToDelete.id));
+  function confirmDeleteListClick() {
+    confirmDeleteList(dispatch, itemToDelete.id, user);
     setIsDeleteListModalOpen(false);
     setItemToDelete(null);
   }
 
-  function handleAddTag(name) {
+  function handleAddTagClick(name) {
     const formatted = toTitleCase(name.trim());
-
-    dispatch(addTag(formatted));
+    handleAddTag(dispatch, formatted, user);
   }
 
   function handleDeleteTag(id, name, isDefault) {
@@ -65,12 +64,12 @@ export function SettingsPage({ onClose }) {
       toast.error('Cannot delete default tag');
       return;
     }
-    setItemToDelete({ id, name, type: 'tag' });
+    setItemToDelete({ id, name });
     setIsDeleteTagModalOpen(true);
   }
 
-  function confirmDeleteTag() {
-    dispatch(deleteTag(itemToDelete.id));
+  function confirmDeleteTagClick() {
+    confirmDeleteTag(dispatch, itemToDelete.id, user);
     setIsDeleteTagModalOpen(false);
     setItemToDelete(null);
   }
@@ -302,7 +301,7 @@ export function SettingsPage({ onClose }) {
         placeholder="Enter list name"
         isOpen={isAddListModalOpen}
         onClose={() => setIsAddListModalOpen(false)}
-        onSave={handleAddList}
+        onSave={handleAddListClick}
       />
 
       <AddItemModal
@@ -310,7 +309,7 @@ export function SettingsPage({ onClose }) {
         placeholder="Enter tag name"
         isOpen={isAddTagModalOpen}
         onClose={() => setIsAddTagModalOpen(false)}
-        onSave={handleAddTag}
+        onSave={handleAddTagClick}
       />
 
       <DeleteConfirmModal
@@ -322,7 +321,7 @@ export function SettingsPage({ onClose }) {
           setIsDeleteListModalOpen(false);
           setItemToDelete(null);
         }}
-        onConfirm={confirmDeleteList}
+        onConfirm={confirmDeleteListClick}
       />
 
       <DeleteConfirmModal
@@ -334,7 +333,7 @@ export function SettingsPage({ onClose }) {
           setIsDeleteTagModalOpen(false);
           setItemToDelete(null);
         }}
-        onConfirm={confirmDeleteTag}
+        onConfirm={confirmDeleteTagClick}
       />
     </div>
   );
