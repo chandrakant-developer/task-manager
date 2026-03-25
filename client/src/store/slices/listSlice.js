@@ -1,13 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  lists: [
-    { _id: "1", name: "Personal", isDefault: true },
-    { _id: "2", name: "Work", isDefault: true },
-    { _id: "3", name: "Shopping", isDefault: true },
-    { _id: "4", name: "Health", isDefault: true },
-    { _id: "5", name: "Travel", isDefault: true }
-  ],
+  lists: [],
   loading: false,
   error: null,
 };
@@ -16,12 +10,11 @@ const listSlice = createSlice({
   name: 'lists',
   initialState,
   reducers: {
+    setList: (state, action) => {
+      state.lists = action.payload;
+    },
     addList: (state, action) => {
-      const newList = {
-        _id: Date.now().toString(),
-        name: action.payload
-      };
-      state.lists.push(newList);
+      state.lists.push(action.payload);
     },
     deleteList: (state, action) => {
       state.lists = state.lists.filter(
@@ -31,6 +24,6 @@ const listSlice = createSlice({
   }
 });
 
-export const { addList, deleteList } = listSlice.actions;
+export const { setList, addList, deleteList } = listSlice.actions;
 
 export default listSlice.reducer;

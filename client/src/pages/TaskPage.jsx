@@ -1,24 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, ChevronRight } from 'lucide-react';
 import { TaskDetailsPanel, DeleteConfirmModal } from '../components';
 import { STATUS_FILTER_OPTIONS } from '../constants';
-
 import { useSelector, useDispatch } from "react-redux";
-import { addTodo, updateTodo, deleteTodo, toggleTodo } from "../store/slices/todoSlice";
+import { addTodo, setTodos, updateTodo, deleteTodo, toggleTodo } from "../store/slices/todoSlice";
+import { getTodosAPI } from '../services/api';
 
 export function TaskPage() {
+  const user = useSelector((state) => state.user.user);
   const todos = useSelector((state) => state.tasks.todos);
   const dispatch = useDispatch();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
-
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState(null);
+  
+  useEffect(() => {
+    const fetchTodos = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        const userId = user.role === "admin" ? null : user.userId;
+        const data = await getTodosAPI(userId);
+        dispatch(setTodos(data));
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching todos", error);
+      }
+    };
+
+    fetchTodos();
+  }, [user?.userId, dispatch]);
 
   function openCreatePanel() {
     setSelectedTask(null);
@@ -60,8 +78,8 @@ export function TaskPage() {
 
   const filteredTodos = todos.filter((todo) => {
     const matchesSearch =
-      todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (todo.description && todo.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (todo.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (todo.description?.toLowerCase() || "").includes(searchQuery.toLowerCase());
 
     if (filter === 'active') return matchesSearch && !todo.completed;
     if (filter === 'completed') return matchesSearch && todo.completed;
@@ -122,67 +140,71 @@ export function TaskPage() {
               </div>
             </div>
 
-            {filteredTodos.length === 0 && (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <div className="w-10 h-10 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin"></div>
+              </div>
+            ) : filteredTodos.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 No tasks found
               </p>
-            )}
-
-            <ul className="custom-scroller list-none pt-1 pb-[100px] max-h-[calc(100vh-200px)] overflow-y-auto w-full box-border">
-              {filteredTodos.map((todo) => (
-                <li
-                  key={todo._id}
-                  className={`group flex items-center justify-between gap-3 px-2 py-3 border-b border-gray-200 last:border-b-0 w-full transition-colors hover:bg-indigo-50
-                    ${selectedTask && selectedTask._id === todo._id ? 'bg-indigo-50 border-l-[5px] border-indigo-500 border-b-gray-200' : ''}`}
-                >
-                  <div
-                    className="flex items-start gap-3 flex-1 min-w-0"
-                    onClick={() => {
-                      setSelectedTask(todo);
-                      setIsCreateMode(false);
-                      setIsDetailsPanelOpen(true);
-                    }}
-                    style={{ cursor: 'pointer' }}
+            ) : (
+              <ul className="custom-scroller list-none pt-1 pb-[100px] max-h-[calc(100vh-200px)] overflow-y-auto w-full box-border">
+                {filteredTodos.map((todo) => (
+                  <li
+                    key={todo._id}
+                    className={`group flex items-center justify-between gap-3 px-2 py-3 border-b border-gray-200 last:border-b-0 w-full transition-colors hover:bg-indigo-50
+                      ${selectedTask && selectedTask._id === todo._id ? 'bg-indigo-50 border-l-[5px] border-indigo-500 border-b-gray-200' : ''}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={todo.completed}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleToggleCompleted(todo);
+                    <div
+                      className="flex items-start gap-3 flex-1 min-w-0"
+                      onClick={() => {
+                        setSelectedTask(todo);
+                        setIsCreateMode(false);
+                        setIsDetailsPanelOpen(true);
                       }}
-                      onClick={(e) => e.stopPropagation()}
-                      className='mt-[0.3rem] accent-indigo-500 w-[18px] h-[18px] cursor-pointer'
-                    />
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={todo.completed}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleToggleCompleted(todo);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className='mt-[0.3rem] accent-indigo-500 w-[18px] h-[18px] cursor-pointer'
+                      />
 
-                    <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
-                      <div className={`font-semibold text-base leading-[1.4] break-words max-w-full
-                        ${todo.completed ? 'line-through text-gray-500' : ''}`}
-                      >
-                        {todo.title}
-                      </div>
-
-                      {todo.description && (
-                        <div className="text-sm text-gray-500 leading-[1.5] max-w-full truncate">
-                          {todo.description}
+                      <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
+                        <div className={`font-semibold text-base leading-[1.4] break-words max-w-full
+                          ${todo.completed ? 'line-through text-gray-500' : ''}`}
+                        >
+                          {todo.title}
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  <ChevronRight
-                    size={20}
-                    className={`text-gray-400 shrink-0 transition-transform hover:text-indigo-500 hover:translate-x-0.5 group-hover:text-indigo-500
-                      ${selectedTask && selectedTask._id === todo._id ? 'text-indigo-500' : ''}`}
-                    onClick={() => {
-                      setSelectedTask(todo);
-                      setIsCreateMode(false);
-                      setIsDetailsPanelOpen(true);
-                    }}
-                  />
-                </li>
-              ))}
-            </ul>
+                        {todo.description && (
+                          <div className="text-sm text-gray-500 leading-[1.5] max-w-full truncate">
+                            {todo.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <ChevronRight
+                      size={20}
+                      className={`text-gray-400 shrink-0 transition-transform hover:text-indigo-500 hover:translate-x-0.5 group-hover:text-indigo-500
+                        ${selectedTask && selectedTask._id === todo._id ? 'text-indigo-500' : ''}`}
+                      onClick={() => {
+                        setSelectedTask(todo);
+                        setIsCreateMode(false);
+                        setIsDetailsPanelOpen(true);
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

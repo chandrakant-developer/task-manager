@@ -1,8 +1,12 @@
 import { createPortal } from "react-dom";
 import { Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { clearUser } from "../store/slices/auth.slice";
 
 export function UserMenu({ isOpen, menuPosition, onClose }) {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -16,12 +20,43 @@ export function UserMenu({ isOpen, menuPosition, onClose }) {
     {
       label: "Sign Out",
       icon: LogOut,
-      path: "/logout",
+      action: "logout",
     },
   ];
 
-  function handleClick(path) {
-    navigate(path);
+  async function handleLogout() {
+    try {
+      const res = await fetch("http://localhost:5001/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Logout failed");
+        return;
+      }
+
+      toast.success("Logged out successfully");
+
+      dispatch(clearUser());
+
+      navigate("/login");
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Network error");
+    }
+  }
+
+  function handleClick(item) {
+    if (item.action === "logout") {
+      handleLogout();
+    } else {
+      navigate(item.path);
+    }
+
     onClose();
   }
 
@@ -45,7 +80,7 @@ export function UserMenu({ isOpen, menuPosition, onClose }) {
             <div
               key={item.label}
               className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-500 cursor-pointer transition-colors hover:bg-indigo-50 hover:text-indigo-500"
-              onClick={() => handleClick(item.path)}
+              onClick={() => handleClick(item)}
             >
               <Icon size={18} />
               <div>{item.label}</div>

@@ -1,14 +1,13 @@
 import { useState, useRef } from 'react';
 import { Calendar, CalendarDays, Clock, Star, Folder, Plus, ChevronRight, User, CheckSquare } from 'lucide-react';
-
 import { TAG_COLORS, LIST_COLORS, SMART_FILTER_OPTIONS } from '../constants';
 import { AddItemModal, UserMenu } from "../components";
-
-import { addList } from "../store/slices/listSlice";
-import { addTag } from "../store/slices/tagSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { handleAddList } from "../helpers/list.helper";
+import { handleAddTag } from "../helpers/tag.helper";
 
 export function Sidebar() {
+  const user = useSelector((state) => state.user.user);
   const lists = useSelector((state) => state.lists.lists);
   const tags = useSelector((state) => state.tags.tags);
   const todos = useSelector((state) => state.tasks.todos);
@@ -33,16 +32,16 @@ export function Sidebar() {
       .join(' ');
   }
 
-  function handleAddList(name) {
+  function handleAddListClick(name) {
     const formatted = toTitleCase(name.trim());
 
-    dispatch(addList(formatted));
+    handleAddList(dispatch, formatted, user);
   }
-
-  function handleAddTag(name) {
+  
+  function handleAddTagClick(name) {
     const formatted = toTitleCase(name.trim());
 
-    dispatch(addTag(formatted));
+    handleAddTag(dispatch, formatted, user);
   }
 
   const getTaskMenuIcon = (menuId) => {
@@ -236,11 +235,11 @@ export function Sidebar() {
 
               <div className="flex flex-col items-start flex-1 min-w-0 text-left">
                 <div className="text-sm font-semibold text-gray-900 leading-tight truncate">
-                  Chandrakant Patil
+                  {user?.name}
                 </div>
 
                 <div className="text-xs text-gray-500 leading-[1.2] truncate">
-                  chandrakant.patil@example.com
+                  {user?.email}
                 </div>
               </div>
 
@@ -263,7 +262,7 @@ export function Sidebar() {
             placeholder="Enter list name"
             isOpen={isAddListModalOpen}
             onClose={() => setIsAddListModalOpen(false)}
-            onSave={handleAddList}
+            onSave={handleAddListClick}
           />
 
           <AddItemModal
@@ -271,7 +270,7 @@ export function Sidebar() {
             placeholder="Enter tag name"
             isOpen={isAddTagModalOpen}
             onClose={() => setIsAddTagModalOpen(false)}
-            onSave={handleAddTag}
+            onSave={handleAddTagClick}
           />
         </div>
       </aside>
