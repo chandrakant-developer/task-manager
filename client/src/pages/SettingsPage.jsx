@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { X, Plus, Trash2, Folder, Tag as TagIcon, Settings as SettingsIcon } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createListAsync, deleteListAsync } from '../store/slices/listSlice';
-import { createTagAsync, deleteTagAsync } from '../store/slices/tagSlice';
 import { AddItemModal, DeleteConfirmModal } from '../components';
-import { listColors, tagColors } from '../constants/colors';
+import { TAG_COLORS, LIST_COLORS } from '../constants';
+import { useSelector, useDispatch } from "react-redux";
+import { handleAddList, confirmDeleteList } from "../helpers/list.helper";
+import { handleAddTag, confirmDeleteTag } from '../helpers/tag.helper';
 
 export function SettingsPage({ onClose }) {
+  const user = useSelector((state) => state.user.user);
   const lists = useSelector((state) => state.lists.lists);
   const tags = useSelector((state) => state.tags.tags);
   const dispatch = useDispatch();
@@ -16,6 +16,7 @@ export function SettingsPage({ onClose }) {
   const [isAddTagModalOpen, setIsAddTagModalOpen] = useState(false);
   const [isDeleteListModalOpen, setIsDeleteListModalOpen] = useState(false);
   const [isDeleteTagModalOpen, setIsDeleteTagModalOpen] = useState(false);
+  
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const defaultLists = lists.filter((list) => list.isDefault);
@@ -32,28 +33,9 @@ export function SettingsPage({ onClose }) {
       .join(' ');
   }
 
-  function handleAddList(newListName) {
-    const formattedName = toTitleCase(newListName.trim());
-    dispatch(createListAsync(formattedName))
-      .then((result) => {
-        if (createListAsync.fulfilled.match(result)) {
-          toast.success(`List "${formattedName}" created successfully!`);
-        } else {
-          toast.error(`Error creating list: ${result.error.message}`);
-        }
-      });
-  }
-
-  function handleAddTag(newTagName) {
-    const formattedName = toTitleCase(newTagName.trim());
-    dispatch(createTagAsync(formattedName))
-      .then((result) => {
-        if (createTagAsync.fulfilled.match(result)) {
-          toast.success(`Tag "${formattedName}" created successfully!`);
-        } else {
-          toast.error(`Error creating tag: ${result.error.message}`);
-        }
-      });
+  function handleAddListClick(name) {
+    const formatted = toTitleCase(name.trim());
+    handleAddList(dispatch, formatted, user);
   }
 
   function handleDeleteList(id, name, isDefault) {
@@ -61,8 +43,20 @@ export function SettingsPage({ onClose }) {
       toast.error('Cannot delete default list');
       return;
     }
-    setItemToDelete({ id, name, type: 'list' });
+
+    setItemToDelete({ id, name });
     setIsDeleteListModalOpen(true);
+  }
+
+  function confirmDeleteListClick() {
+    confirmDeleteList(dispatch, itemToDelete.id, user);
+    setIsDeleteListModalOpen(false);
+    setItemToDelete(null);
+  }
+
+  function handleAddTagClick(name) {
+    const formatted = toTitleCase(name.trim());
+    handleAddTag(dispatch, formatted, user);
   }
 
   function handleDeleteTag(id, name, isDefault) {
@@ -70,38 +64,14 @@ export function SettingsPage({ onClose }) {
       toast.error('Cannot delete default tag');
       return;
     }
-    setItemToDelete({ id, name, type: 'tag' });
+    setItemToDelete({ id, name });
     setIsDeleteTagModalOpen(true);
   }
 
-  function confirmDeleteList() {
-    if (itemToDelete && itemToDelete.type === 'list') {
-      dispatch(deleteListAsync(itemToDelete.id))
-        .then((result) => {
-          if (deleteListAsync.fulfilled.match(result)) {
-            toast.success(`List "${itemToDelete.name}" deleted successfully!`);
-          } else {
-            toast.error(`Error deleting list: ${result.error.message}`);
-          }
-          setIsDeleteListModalOpen(false);
-          setItemToDelete(null);
-        });
-    }
-  }
-
-  function confirmDeleteTag() {
-    if (itemToDelete && itemToDelete.type === 'tag') {
-      dispatch(deleteTagAsync(itemToDelete.id))
-        .then((result) => {
-          if (deleteTagAsync.fulfilled.match(result)) {
-            toast.success(`Tag "${itemToDelete.name}" deleted successfully!`);
-          } else {
-            toast.error(`Error deleting tag: ${result.error.message}`);
-          }
-          setIsDeleteTagModalOpen(false);
-          setItemToDelete(null);
-        });
-    }
+  function confirmDeleteTagClick() {
+    confirmDeleteTag(dispatch, itemToDelete.id, user);
+    setIsDeleteTagModalOpen(false);
+    setItemToDelete(null);
   }
 
   return (
@@ -157,7 +127,7 @@ export function SettingsPage({ onClose }) {
 
                   <div className="flex flex-wrap gap-4">
                     {defaultLists.map((list, index) => {
-                      const listColor = listColors[index % listColors.length];
+                      const listColor = LIST_COLORS[index % LIST_COLORS.length];
                       return (
                         <div
                           key={list._id}
@@ -184,7 +154,7 @@ export function SettingsPage({ onClose }) {
                   {userLists.length > 0 ? (
                     <div className="flex flex-wrap gap-4">
                       {userLists.map((list, index) => {
-                        const listColor = listColors[(defaultLists.length + index) % listColors.length];
+                        const listColor = LIST_COLORS[(defaultLists.length + index) % LIST_COLORS.length];
                         return (
                           <div
                             key={list._id}
@@ -211,7 +181,7 @@ export function SettingsPage({ onClose }) {
                       })}
                     </div>
                   ) : (
-                    <p className="settings-empty-text">No custom lists yet. Create your first list!</p>
+                    <p className="text-sm text-gray-500">No custom lists yet. Create your first list!</p>
                   )}
                 </div>
               </div>
@@ -245,7 +215,7 @@ export function SettingsPage({ onClose }) {
 
                   <div className="flex flex-wrap gap-3">
                     {defaultTags.map((tag, index) => {
-                      const tagColor = tagColors[index % tagColors.length];
+                      const tagColor = TAG_COLORS[index % TAG_COLORS.length];
                       return (
                         <div
                           key={tag._id}
@@ -272,7 +242,7 @@ export function SettingsPage({ onClose }) {
                   {userTags.length > 0 ? (
                     <div className="flex flex-wrap gap-3">
                       {userTags.map((tag, index) => {
-                        const tagColor = tagColors[(defaultTags.length + index) % tagColors.length];
+                        const tagColor = TAG_COLORS[(defaultTags.length + index) % TAG_COLORS.length];
                         return (
                           <div
                             key={tag._id}
@@ -299,7 +269,7 @@ export function SettingsPage({ onClose }) {
                       })}
                     </div>
                   ) : (
-                    <p className="settings-empty-text">No custom tags yet. Create your first tag!</p>
+                    <p className="text-sm text-gray-500">No custom tags yet. Create your first tag!</p>
                   )}
                 </div>
               </div>
@@ -331,7 +301,7 @@ export function SettingsPage({ onClose }) {
         placeholder="Enter list name"
         isOpen={isAddListModalOpen}
         onClose={() => setIsAddListModalOpen(false)}
-        onSave={handleAddList}
+        onSave={handleAddListClick}
       />
 
       <AddItemModal
@@ -339,7 +309,7 @@ export function SettingsPage({ onClose }) {
         placeholder="Enter tag name"
         isOpen={isAddTagModalOpen}
         onClose={() => setIsAddTagModalOpen(false)}
-        onSave={handleAddTag}
+        onSave={handleAddTagClick}
       />
 
       <DeleteConfirmModal
@@ -351,7 +321,7 @@ export function SettingsPage({ onClose }) {
           setIsDeleteListModalOpen(false);
           setItemToDelete(null);
         }}
-        onConfirm={confirmDeleteList}
+        onConfirm={confirmDeleteListClick}
       />
 
       <DeleteConfirmModal
@@ -363,7 +333,7 @@ export function SettingsPage({ onClose }) {
           setIsDeleteTagModalOpen(false);
           setItemToDelete(null);
         }}
-        onConfirm={confirmDeleteTag}
+        onConfirm={confirmDeleteTagClick}
       />
     </div>
   );

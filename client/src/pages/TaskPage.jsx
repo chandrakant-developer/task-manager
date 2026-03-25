@@ -1,16 +1,17 @@
-import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useState, useEffect } from 'react';
 import { Plus, Search, ChevronRight } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { TaskDetailsPanel, DeleteConfirmModal } from '../components';
-import { createTodosAsync, updateTodoAsync, deleteTodoAsync, toggleCompleteAsync } from '../store/slices/todoSlice';
+import { STATUS_FILTER_OPTIONS } from '../constants';
+import { useSelector, useDispatch } from "react-redux";
+import { addTodo, setTodos, updateTodo, deleteTodo, toggleTodo } from "../store/slices/todoSlice";
+import { getTodosAPI } from '../services/api';
 
-export function TodoPage() {
-  const todos = useSelector((state) => state.todos.todos);
-  const loading = useSelector((state) => state.todos.loading);
-  const error = useSelector((state) => state.todos.error);
+export function TaskPage() {
+  const user = useSelector((state) => state.user.user);
+  const todos = useSelector((state) => state.tasks.todos);
   const dispatch = useDispatch();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedTask, setSelectedTask] = useState(null);
@@ -18,6 +19,24 @@ export function TodoPage() {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState(null);
+  
+  useEffect(() => {
+    const fetchTodos = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoading(true);
+        const userId = user.role === "admin" ? null : user.userId;
+        const data = await getTodosAPI(userId);
+        dispatch(setTodos(data));
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching todos", error);
+      }
+    };
+
+    fetchTodos();
+  }, [user?.userId, dispatch]);
 
   function openCreatePanel() {
     setSelectedTask(null);
@@ -26,19 +45,7 @@ export function TodoPage() {
   }
 
   function handleToggleCompleted(todo) {
-    dispatch(toggleCompleteAsync({
-      id: todo._id,
-      currentCompleted: todo.completed
-    }))
-      .then((result) => {
-        if (toggleCompleteAsync.fulfilled.match(result)) {
-          if (selectedTask && selectedTask._id === todo._id) {
-            setSelectedTask(result.payload);
-          }
-        } else {
-          toast.error(`Error updating task: ${result.error.message}`);
-        }
-      });
+    dispatch(toggleTodo(todo._id));
   }
 
   function handleDelete(id) {
@@ -48,76 +55,37 @@ export function TodoPage() {
   }
 
   function confirmDelete() {
-    if (todoToDelete) {
-      dispatch(deleteTodoAsync(todoToDelete.id))
-        .then((result) => {
-          if (deleteTodoAsync.fulfilled.match(result)) {
-            if (selectedTask && selectedTask._id === todoToDelete.id) {
-              setIsDetailsPanelOpen(false);
-              setSelectedTask(null);
-            }
-            setTodoToDelete(null);
-            toast.success(`Task "${todoToDelete.title}" deleted successfully!`);
-          } else {
-            toast.error(`Error deleting task: ${result.error.message}`);
-          }
-        });
+    dispatch(deleteTodo(todoToDelete.id));
+    setIsDeleteModalOpen(false);
+    setTodoToDelete(null);
+
+    if (selectedTask && selectedTask._id === todoToDelete.id) {
+      setIsDetailsPanelOpen(false);
+      setSelectedTask(null);
     }
   }
 
   function handleSaveTask(id, taskData) {
     if (id === null) {
-      dispatch(createTodosAsync({
-        title: taskData.title,
-        description: taskData.description,
-        list: taskData.list,
-        dueDate: taskData.dueDate,
-        tags: taskData.tags,
-      }))
-        .then((result) => {
-          if (createTodosAsync.fulfilled.match(result)) {
-            toast.success(`Task "${taskData.title}" created successfully!`);
-          } else {
-            toast.error(`Error creating task: ${result.error.message}`);
-          }
-        });
+      dispatch(addTodo(taskData));
     } else {
-      dispatch(
-        updateTodoAsync({
-          id: id,
-          updates: taskData,
-        })
-      )
-        .then((result) => {
-          if (updateTodoAsync.fulfilled.match(result)) {
-            if (selectedTask && selectedTask._id === id) {
-              setSelectedTask(result.payload);
-            }
-            toast.success(`Task "${taskData.title}" updated successfully!`);
-          } else {
-            toast.error(`Error updating task: ${result.error.message}`);
-          }
-        });
+      dispatch(updateTodo({
+        _id: id,
+        ...taskData
+      }));
     }
   }
 
   const filteredTodos = todos.filter((todo) => {
     const matchesSearch =
-      todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (todo.description &&
-        todo.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (todo.title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (todo.description?.toLowerCase() || "").includes(searchQuery.toLowerCase());
 
     if (filter === 'active') return matchesSearch && !todo.completed;
     if (filter === 'completed') return matchesSearch && todo.completed;
 
     return matchesSearch;
   });
-
-  const stats = {
-    total: todos.length,
-    active: todos.filter((t) => !t.completed).length,
-    completed: todos.filter((t) => t.completed).length,
-  };
 
   return (
     <div className="flex w-full h-full overflow-hidden min-w-0 box-border mb-4">
@@ -126,45 +94,32 @@ export function TodoPage() {
           <div className="w-full min-w-0 bg-transparent shadow-none rounded-none">
             <div className="flex justify-start items-center mb-4 py-6 border-b border-gray-200 w-full max-w-full box-border">
               <h2 className='m-0 text-[2.5rem] flex items-center gap-3 font-semibold leading-none'>
-                <span> All Tasks </span>
+                <div> All Tasks </div>
 
-                <span className="flex items-center justify-center gap-2 px-3 py-1 ml-3 bg-purple-400 text-white rounded-full text-sm font-medium shrink-0">
-                  <span className="text-sm font-medium leading-none">
-                    {stats.total}
-                  </span>
+                <div className="flex items-center justify-center gap-2 px-3 py-1 ml-3 bg-purple-400 text-white rounded-full text-sm font-medium shrink-0">
+                  <div className="text-sm font-medium leading-none">
+                    {todos.length}
+                  </div>
 
-                  <span className="text-sm font-medium uppercase tracking-wide">
+                  <div className="text-sm font-medium uppercase tracking-wide">
                     Total
-                  </span>
-                </span>
+                  </div>
+                </div>
               </h2>
             </div>
 
             <div className="flex items-center gap-2 mb-4 pb-5 border-b border-gray-200 w-full overflow-hidden overflow-x-auto md:overflow-visible">
               <div className="flex items-center gap-2 py-2 font-medium cursor-pointer transition-colors">
-                <button
-                  className={`inline-flex items-center gap-2 px-[1.5rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
-                    ${filter === "all" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
-                  onClick={() => setFilter("all")}
-                >
-                  All
-                </button>
-
-                <button
-                  className={`inline-flex items-center gap-2 px-[1rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
-                    ${filter === "active" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
-                  onClick={() => setFilter("active")}
-                >
-                  Active
-                </button>
-
-                <button
-                  className={`inline-flex items-center gap-2 px-[1rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
-                    ${filter === "completed" ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
-                  onClick={() => setFilter("completed")}
-                >
-                  Completed
-                </button>
+                {STATUS_FILTER_OPTIONS.map((option) => (
+                  <div
+                    key={option.id}
+                    className={`inline-flex items-center gap-2 px-[1.5rem] py-[0.5rem] rounded-full border border-gray-300 text-[0.85rem] font-medium transition-all duration-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-400
+                      ${filter === option.id ? "bg-gray-600 text-white border-gray-600 hover:bg-gray-600 hover:text-white" : ""}`}
+                    onClick={() => setFilter(option.id)}
+                  >
+                    {option.label}
+                  </div>
+                ))}
               </div>
 
               <div className="w-px h-6 bg-gray-200 mx-2 shrink-0"></div>
@@ -180,34 +135,20 @@ export function TodoPage() {
                   placeholder="Search tasks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="min-w-[300px] px-[1rem] py-[0.5rem] pl-10 bg-transparent border border-gray-200 rounded-full text-[0.85rem] text-gray-500 transition-all duration-200 focus:bg-indigo-50 focus:text-gray-500 focus:border-gray-400 focus:outline-none hover:bg-gray-50 hover:text-gray-500 hover:border-gray-400"
+                  className="min-w-[300px] px-[1rem] py-[0.5rem] pl-10 bg-transparent border border-gray-300 rounded-full text-[0.85rem] text-gray-500 transition-all duration-200 focus:bg-indigo-50 focus:text-gray-500 focus:border-gray-400 focus:outline-none hover:bg-gray-50 hover:text-gray-500 hover:border-gray-400"
                 />
               </div>
             </div>
 
-            {loading && (
-              <p className="text-[0.95rem] text-gray-500 mt-4 text-center py-8 px-4">
-                Loading tasks...
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <div className="w-10 h-10 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin"></div>
+              </div>
+            ) : filteredTodos.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">
+                No tasks found
               </p>
-            )}
-
-            {error && (
-              <p className="text-red-500 text-[0.9rem] p-3 bg-red-50 rounded-lg my-2">
-                Error: {error}
-              </p>
-            )}
-
-            {!loading && !error && filteredTodos.length === 0 && (
-              <p className="text-[0.95rem] text-gray-500 mt-4 text-center py-8 px-4">
-                {searchQuery
-                  ? 'No tasks match your search'
-                  : filter !== 'all'
-                    ? `No ${filter} tasks`
-                    : 'No tasks yet. Create your first task!'}
-              </p>
-            )}
-
-            {!loading && !error && (
+            ) : (
               <ul className="custom-scroller list-none pt-1 pb-[100px] max-h-[calc(100vh-200px)] overflow-y-auto w-full box-border">
                 {filteredTodos.map((todo) => (
                   <li
