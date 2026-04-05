@@ -17,16 +17,23 @@ export const privateApiClient = axios.create({
 });
 
 privateApiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const url = error.config?.url;
-    
-    if (
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if(
       error.response?.status === 401 &&
-      !url.includes("/auth/login") &&
-      !url.includes("/user")
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/auth/refresh")
     ) {
-      store.dispatch(clearUser());
+      originalRequest._retry = true;
+
+      try {
+        await refreshTokenAPI();
+        return privateApiClient(originalRequest);
+      } catch (error) {
+        store.dispatch(clearUser());
+      }
     }
 
     return Promise.reject(error);
@@ -49,6 +56,11 @@ export const userAPI = async () => {
   return response.data;
 };
 
+export const refreshTokenAPI = async () => {
+  const res = await publicApiClient.post('/auth/refresh');
+  return res.data;
+};
+
 // Todos API
 export const getTodosAPI = async (userId) => {
   const response = await privateApiClient.get("/todos", { 
@@ -58,17 +70,21 @@ export const getTodosAPI = async (userId) => {
 };
 
 export const createTodoAPI = async (todoData) => {
-  const response = await privateApiClient.post('/todos', todoData);
+  const response = await privateApiClient.post("/todos", todoData);
   return response.data;
 };
 
-export const updateTodoAPI = async (id, updates) => {
-  const response = await privateApiClient.put(`/todos/${id}`, updates);
+export const updateTodoAPI = async (userId, id, updates) => {
+  const response = await privateApiClient.put(`/todos/${id}`, updates, {
+    params: userId ? { userId } : {},
+  });
   return response.data;
 };
 
-export const deleteTodoAPI = async (id) => {
-  const response = await privateApiClient.delete(`/todos/${id}`);
+export const deleteTodoAPI = async (userId, id) => {
+  const response = await privateApiClient.delete(`/todos/${id}`, {
+    params: userId ? { userId } : {},
+  });
   return response.data;
 };
 

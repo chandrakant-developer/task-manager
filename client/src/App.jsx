@@ -58,7 +58,7 @@ function App() {
   }, [dispatch, isAuthRoute]);
 
   useEffect(() => {
-    if(loading) return;
+     if(loading) return;
 
     if(!user && !isAuthRoute && !isLandingRoute) {
       navigate("/login");

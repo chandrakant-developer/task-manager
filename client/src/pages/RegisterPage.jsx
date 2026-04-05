@@ -18,6 +18,7 @@ export function RegisterPage() {
     password: '',
     confirmPassword: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -65,6 +66,9 @@ export function RegisterPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
+    if (isLoading) return;
+
+    setIsLoading(true);
 
     try {
       const data = await registerAPI({
@@ -84,6 +88,8 @@ export function RegisterPage() {
         "Something went wrong";
 
       toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -212,9 +218,11 @@ export function RegisterPage() {
 
                 <button
                   type="submit"
-                  className="w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600"
+                  disabled={isLoading}
+                  className={`w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600
+                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  Create account
+                  {isLoading ? "In progress..." : "Create Account"}
                 </button>
               </form>
             </div>

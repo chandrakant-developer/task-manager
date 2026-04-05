@@ -4,7 +4,8 @@ import { TaskDetailsPanel, DeleteConfirmModal } from '../components';
 import { STATUS_FILTER_OPTIONS } from '../constants';
 import { useSelector, useDispatch } from "react-redux";
 import { addTodo, setTodos, updateTodo, deleteTodo, toggleTodo } from "../store/slices/todoSlice";
-import { getTodosAPI } from '../services/api';
+import { getTodosAPI, createTodoAPI, updateTodoAPI, deleteTodoAPI } from '../services/api';
+import { toast } from 'react-toastify';
 
 export function TaskPage() {
   const user = useSelector((state) => state.user.user);
@@ -19,24 +20,26 @@ export function TaskPage() {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [todoToDelete, setTodoToDelete] = useState(null);
-  
+
+  const userId = user?.role === "admin" ? null : user?.userId;
+
   useEffect(() => {
     const fetchTodos = async () => {
-      if (!user) return;
+      if (!userId) return;
 
       try {
         setIsLoading(true);
-        const userId = user.role === "admin" ? null : user.userId;
-        const data = await getTodosAPI(userId);
-        dispatch(setTodos(data));
-        setIsLoading(false);
+        const res = await getTodosAPI(userId);
+        dispatch(setTodos(res.data));
       } catch (error) {
         console.error("Error fetching todos", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchTodos();
-  }, [user?.userId, dispatch]);
+  }, [userId, dispatch]);
 
   function openCreatePanel() {
     setSelectedTask(null);
@@ -44,8 +47,23 @@ export function TaskPage() {
     setIsDetailsPanelOpen(true);
   }
 
-  function handleToggleCompleted(todo) {
-    dispatch(toggleTodo(todo._id));
+  async function handleToggleCompleted(todo) {
+    try {
+      const updatedData = {
+        completed: !todo.completed,
+      }
+
+      const res = await updateTodoAPI(userId, todo._id, updatedData);
+      dispatch(toggleTodo(res?.data?._id));
+      toast.success(res?.message || "Task updated successfully");
+    } catch (error) {
+      console.error("Error updating todos", error);
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update task"
+      );
+    }
   }
 
   function handleDelete(id) {
@@ -54,10 +72,21 @@ export function TaskPage() {
     setIsDeleteModalOpen(true);
   }
 
-  function confirmDelete() {
-    dispatch(deleteTodo(todoToDelete.id));
-    setIsDeleteModalOpen(false);
-    setTodoToDelete(null);
+  async function confirmDelete() {
+    try {
+      const res = await deleteTodoAPI(userId, todoToDelete.id);
+      dispatch(deleteTodo(todoToDelete.id));
+      toast.success(res?.message || "Task deleted successfully");
+      setIsDeleteModalOpen(false);
+      setTodoToDelete(null);
+    } catch (error) {
+      console.error("Error updating task", error);
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete task"
+      );
+    }
 
     if (selectedTask && selectedTask._id === todoToDelete.id) {
       setIsDetailsPanelOpen(false);
@@ -65,14 +94,38 @@ export function TaskPage() {
     }
   }
 
-  function handleSaveTask(id, taskData) {
+  async function handleSaveTask(id, taskData) {
     if (id === null) {
-      dispatch(addTodo(taskData));
+      try {
+        const todoData = {
+          ...taskData,
+          userId,
+        }
+
+        const res = await createTodoAPI(todoData);
+        toast.success(res?.message || "Task created successfully");
+        dispatch(addTodo(res?.data || res));
+      } catch (error) {
+        console.error("Error creating task", error);
+        toast.error(
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to create task"
+        );
+      }
     } else {
-      dispatch(updateTodo({
-        _id: id,
-        ...taskData
-      }));
+      try {
+        const data = await updateTodoAPI(userId, id, taskData);
+        toast.success(data?.message || "Task updated successfully");
+        dispatch(updateTodo(data.data));
+      } catch (error) {
+        console.error("Error updating task", error);
+        toast.error(
+          error?.response?.data?.message ||
+          error?.message || 
+          "Failed to update task"
+        );
+      }
     }
   }
 
