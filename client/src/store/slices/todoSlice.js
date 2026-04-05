@@ -15,11 +15,8 @@ const todoSlice = createSlice({
         },
         
         addTodo: (state, action) => {
-            state.todos.unshift({
-                _id: Date.now().toString(),
-                completed: false,
-                ...action.payload
-            });
+            if (!action.payload) return;
+            state.todos.unshift(action.payload);
         },
 
         updateTodo: (state, action) => {
