@@ -3,7 +3,7 @@ import { addList, deleteList } from "../store/slices/listSlice";
 import { toast } from "react-toastify";
 
 const getUserId = (user) => user?.role === "admin" ? null : user?.userId;
-const getErrorMessage = (error, fallback) => error?.response?.data?.message || fallback; 
+const getErrorMessage = (error, fallback) => error?.response?.data?.message || error?.message || fallback; 
 
 export const handleAddList = async (dispatch, name, user) => {
   try {

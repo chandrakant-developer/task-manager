@@ -13,8 +13,9 @@ export function LoginPage() {
 
   const user = useSelector((state) => state.user.user);
 
-  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -52,6 +53,9 @@ export function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
+    if (isLoading) return;
+
+    setIsLoading(true);
 
     try {
       const data = await loginAPI({
@@ -63,14 +67,10 @@ export function LoginPage() {
       dispatch(setUser(data.user));
       navigate("/tasks");
     } catch (error) {
-      console.error(error);
-
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error?.message ||
-        "Something went wrong";
-
-      toast.error(message);
+      console.error("Error logging in", error);
+      toast.error(error?.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -162,9 +162,11 @@ export function LoginPage() {
 
                 <button
                   type="submit"
-                  className="w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600"
+                  disabled={isLoading}
+                  className={`w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600
+                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  Sign in
+                  {isLoading ? "Logging in..." : "Sign in" }
                 </button>
               </form>
             </div>
