@@ -10,7 +10,7 @@ exports.getLists = async (userId) => {
     query = { userId: null };
   }
 
-  const lists = await List.find(query).sort({ isDefault: -1, name: 1 });
+  const lists = await List.find(query).sort({ isDefault: -1, createdAt: 1 });
 
   if(lists.length === 0) {
     throw new Error(ERRORS.LIST_ERRORS.LIST_NOT_FOUND);

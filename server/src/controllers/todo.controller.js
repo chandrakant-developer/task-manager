@@ -5,15 +5,21 @@ exports.getTodos = async (req, res) => {
   try {
     const { userId } = req.query;
     const todos = await todoService.getTodos(userId);
-    res.json(todos);
+    res.json({
+      success: true,
+      data: todos
+    });
   } catch (error) {
     if (error.message === ERRORS.TODO_ERRORS.TODO_NOT_FOUND) {
-      return res.status(404).json({ message: "Todo not found" });
+      return res.status(404).json({
+        message: "Task not found",
+        error: error.message
+      });
     }
-    
+
     res.status(500).json({
-      message: "Error fetching todos",
-      error: error.message,
+      message: "Error fetching tasks",
+      error: error.message
     });
   }
 };
@@ -23,32 +29,43 @@ exports.getTodoById = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.query;
     const todo = await todoService.getTodoById(id, userId);
-    res.json(todo);
-
+    res.json({
+      success: true,
+      data: todo
+    });
   } catch (error) {
     if (error.message === ERRORS.TODO_ERRORS.TODO_NOT_FOUND) {
-      return res.status(404).json({ message: "Todo not found" });
+      return res.status(404).json({
+        message: "Task not found",
+        error: error.message
+      });
     }
 
     if (error.message === ERRORS.TODO_ERRORS.UNAUTHORIZED) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({
+        message: "Unauthorized",
+        error: error.message
+      });
     }
 
     res.status(500).json({
-      message: "Error fetching todo",
-      error: error.message,
+      message: "Error fetching task",
+      error: error.message
     });
   }
 };
 
 exports.createTodo = async (req, res) => {
   try {
-    const todo = await todoService.createTodo(req.body);
-    res.status(201).json(todo);
+    const newTodo = await todoService.createTodo(req.body);
+    res.status(201).json({
+      message: "Task created successfully",
+      data: newTodo
+    });
   } catch (error) {
     res.status(500).json({
-      message: "Error creating todo",
-      error: error.message,
+      message: "Error creating task",
+      error: error.message
     });
   }
 };
@@ -58,18 +75,27 @@ exports.updateTodo = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.query;
     const updatedTodo = await todoService.updateTodo(id, userId, req.body);
-    res.json(updatedTodo);
+    res.json({
+      message: "Task updated successfully",
+      data: updatedTodo
+    });
   } catch (error) {
     if (error.message === ERRORS.TODO_ERRORS.TODO_NOT_FOUND) {
-      return res.status(404).json({ message: "Todo not found" });
+      return res.status(404).json({
+        message: "Task not found",
+        error: error.message
+      });
     }
 
     if (error.message === ERRORS.TODO_ERRORS.UNAUTHORIZED) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({
+        message: "Unauthorized",
+        error: error.message
+      });
     }
 
     res.status(500).json({
-      message: "Error updating todo",
+      message: "Error updating task",
       error: error.message,
     });
   }
@@ -80,10 +106,15 @@ exports.deleteTodo = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.query;
     await todoService.deleteTodo(id, userId);
-    res.json({ message: "Todo deleted successfully" });
+    res.json({
+      message: "Task deleted successfully"
+    });
   } catch (error) {
     if (error.message === ERRORS.TODO_ERRORS.TODO_NOT_FOUND) {
-      return res.status(404).json({ message: "Todo not found" });
+      return res.status(404).json({ 
+        message: "Task not found",
+        error: error.message
+      });
     }
 
     if (error.message === ERRORS.TODO_ERRORS.UNAUTHORIZED) {
