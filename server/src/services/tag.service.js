@@ -10,7 +10,7 @@ exports.getTags = async (userId) => {
     query = { userId: null };
   }
 
-  const tags = await Tag.find(query).sort({ isDefault: -1, name: 1 });
+  const tags = await Tag.find(query).sort({ isDefault: -1, createdAt: 1 });
 
   if(tags.length === 0) {
     throw new Error(ERRORS.TAG_ERRORS.TAG_NOT_FOUND);

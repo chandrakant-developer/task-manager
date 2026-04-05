@@ -6,7 +6,7 @@ const User = require("../models/user.model");
 const Session = require("../models/session.model");
 
 const generateUserId = require("../utils/generateUserId");
-const { generateAccessToken, generateRefreshToken } = require("../utils/generateToken");
+const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 
 exports.registerUser = async ({ name, email, password, phone }) => {
     email = email.trim().toLowerCase();
@@ -31,7 +31,9 @@ exports.registerUser = async ({ name, email, password, phone }) => {
         id: user._id,
         userId: user.userId,
         name: user.name,
-        email: user.email
+        email: user.email,
+        phone: user.phone,
+        role: user.role
     };
 };
 
@@ -67,7 +69,9 @@ exports.loginUser = async (email, password, req) => {
             id: user._id,
             userId: user.userId,
             name: user.name,
-            email: user.email
+            email: user.email,
+            phone: user.phone,
+            role: user.role
         }
     };
 };
@@ -92,17 +96,15 @@ exports.refreshToken = async (refreshToken) => {
     };
 };
 
-
-
 exports.logoutUser = async (refreshToken) => {
     if (!refreshToken) {
-        throw new AppError(ERRORS.AUTH_ERRORS.TOKEN_MISSING);
+        throw new Error(ERRORS.AUTH_ERRORS.TOKEN_MISSING);
     }
 
     const deletedSession = await Session.deleteOne({ refreshToken });
 
     if (!deletedSession.deletedCount) {
-        throw new AppError(ERRORS.AUTH_ERRORS.INVALID_SESSION);
+        throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
     }
 
     return {

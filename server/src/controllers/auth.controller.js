@@ -34,16 +34,18 @@ exports.loginUser = async (req, res) => {
             httpOnly: true,
             secure: false, // true in production
             sameSite: "strict",
+            path: "/",
             maxAge: 15 * 60 * 1000
         });
 
         res.cookie("refreshToken", data.refreshToken, {
             httpOnly: true,
-            secure: false,
+            secure: false, // true in production
             sameSite: "strict",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-        
+
         res.json({
             message: "Login successful",
             user: data.user
@@ -71,6 +73,7 @@ exports.refreshToken = async (req, res) => {
             httpOnly: true,
             secure: false, // true in production
             sameSite: "strict",
+            path: "/",
             maxAge: 15 * 60 * 1000
         });
 
@@ -89,13 +92,26 @@ exports.logoutUser = async (req, res) => {
         const refreshToken = req.cookies.refreshToken;
         await authService.logoutUser(refreshToken);
 
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken", {
+            httpOnly: true,
+            secure: false, // true in production
+            sameSite: "strict",
+            path: "/"
+        });
+
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: false, // true in production
+            sameSite: "strict",
+            path: "/"
+        });
 
         res.json({
             message: "Logged out successfully"
         });
     } catch (error) {
+        console.error("Logout error:", error);
+
         res.status(500).json({
             message: "Error logging out"
         });
