@@ -1,51 +1,28 @@
 const List = require('../models/list.model');
-const ERRORS = require("../utils/errorCodes");
+const { ERRORS } = require("../constants");
 
-exports.getLists = async (userId) => {
+exports.getLists = async (role, userId) => {
   let query = {};
 
-  if (userId) {
-    query = { $or: [{ userId: null }, { userId: userId }] };
+  if (role === 'user') {
+    query = { $or: [{ isDefault: true }, { userId }] };
   } else {
-    query = { userId: null };
+    query = { isDefault: true };
   }
 
-  const lists = await List.find(query).sort({ isDefault: -1, createdAt: 1 });
-
-  if(lists.length === 0) {
-    throw new Error(ERRORS.LIST_ERRORS.LIST_NOT_FOUND);
-  }
-
-  return lists;
+  return await List.find(query).sort({ isDefault: -1, createdAt: 1 }).lean();
 };
 
 exports.createList = async (name, userId) => {
   name = name.trim();
-  userId = userId | null;
-
-  if (!name) {
-    throw new Error(ERRORS.LIST_ERRORS.LIST_NAME_REQUIRED);
-  }
-
-  const existingList = await List.findOne({
-    name,
-    $or: [
-      { userId: null },
-      { userId: userId }
-    ]
-  });
+  
+  const existingList = await List.findOne({ name, userId });
 
   if (existingList) {
     throw new Error(ERRORS.LIST_ERRORS.LIST_EXISTS);
   }
 
-  const newList = await List.create({
-    name,
-    userId,
-    isDefault: false
-  });
-
-  return newList;
+  return await List.create({ name, userId, isDefault: false });
 };
 
 exports.deleteList = async (id, userId) => {
@@ -59,9 +36,9 @@ exports.deleteList = async (id, userId) => {
     throw new Error(ERRORS.LIST_ERRORS.DEFAULT_LIST);
   }
 
-  if (list.userId && list.userId !== userId) {
+  if (list.userId && Number(list.userId) !== Number(userId)) {
     throw new Error(ERRORS.LIST_ERRORS.UNAUTHORIZED);
   }
 
-  await List.findByIdAndDelete(id);
+  await list.deleteOne();
 }
