@@ -1,6 +1,6 @@
 const Counter = require("../models/counter.model");
 
-async function generateUserId() {
+exports.generateUserId = async () => {
     const counter = await Counter.findByIdAndUpdate(
         { _id: "userId" },
         { $inc: { seq: 1 } },
@@ -8,6 +8,4 @@ async function generateUserId() {
     );
 
     return counter.seq;
-}
-
-module.exports = generateUserId;
+};

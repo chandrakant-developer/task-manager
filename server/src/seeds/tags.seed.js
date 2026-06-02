@@ -13,13 +13,13 @@ async function seedTags() {
     for (const tagName of DEFAULT_TAGS) {
       const existingTag = await Tag.findOne({
         name: tagName,
-        userId: null,
+        userId: 0,
       });
 
       if (!existingTag) {
         await Tag.create({
           name: tagName,
-          userId: null,
+          userId: 0,
           isDefault: true,
         });
 

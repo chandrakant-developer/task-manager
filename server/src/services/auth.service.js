@@ -1,43 +1,36 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const ERRORS = require('../utils/errorCodes');
-
+const { generateUserId, generateAccessToken, generateRefreshToken } = require('../utils');
+const { mapUser } = require("../mappers/user.mapper");
+const { SALT_ROUNDS, REFRESH_TOKEN_EXPIRY } = require("../config/auth.config");
 const User = require("../models/user.model");
 const Session = require("../models/session.model");
+const { ERRORS } = require("../constants");
 
-const generateUserId = require("../utils/generateUserId");
-const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
-
-exports.registerUser = async ({ name, email, password, phone }) => {
+exports.registerUser = async ({ name, email, password }) => {
     email = email.trim().toLowerCase();
+
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
         throw new Error(ERRORS.AUTH_ERRORS.EMAIL_EXISTS);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const userId = await generateUserId();
 
     const user = await User.create({
         userId,
         name,
         email,
-        password: hashedPassword,
-        phone
+        password: hashedPassword
     });
 
-    return {
-        id: user._id,
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role
-    };
+    return mapUser(user);
 };
 
-exports.loginUser = async (email, password, req) => {
+exports.loginUser = async (email, password, ipAddress, device) => {
+    email = email.trim().toLowerCase();
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -54,41 +47,52 @@ exports.loginUser = async (email, password, req) => {
     const refreshToken = generateRefreshToken(user);
 
     await Session.create({
-        userId: user._id,
+        userId: user.userId,
         refreshToken,
-        device: "web",
-        ipAddress: req.ip,
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000
+        device,
+        ipAddress,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_EXPIRY)
     });
 
     return {
-        message: "Login successful",
         accessToken,
         refreshToken,
-        user: {
-            id: user._id,
-            userId: user.userId,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role
-        }
+        user: mapUser(user)
     };
 };
 
 exports.refreshToken = async (refreshToken) => {
+    if (!refreshToken) {
+        throw new Error(ERRORS.AUTH_ERRORS.TOKEN_MISSING);
+    }
+
     const session = await Session.findOne({ refreshToken });
 
     if (!session) {
         throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
     }
 
-    const decoded = jwt.verify(
-        refreshToken,
-        process.env.JWT_REFRESH_SECRET
-    );
+    if (session.expiresAt < new Date()) {
+        throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
+    }
+
+    let decoded;
+
+    try {
+        decoded = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET
+        );
+    } catch (error) {
+        throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
+    }
 
     const user = await User.findById(decoded.id);
+
+    if (!user) {
+        throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
+    }
+
     const newAccessToken = generateAccessToken(user);
 
     return {
@@ -101,13 +105,11 @@ exports.logoutUser = async (refreshToken) => {
         throw new Error(ERRORS.AUTH_ERRORS.TOKEN_MISSING);
     }
 
-    const deletedSession = await Session.deleteOne({ refreshToken });
+    const result = await Session.deleteOne({ refreshToken });
 
-    if (!deletedSession.deletedCount) {
+    if (result.deletedCount === 0) {
         throw new Error(ERRORS.AUTH_ERRORS.INVALID_SESSION);
     }
 
-    return {
-        message: "Logged out successfully"
-    };
+    return true;
 };

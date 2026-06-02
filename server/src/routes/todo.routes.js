@@ -7,6 +7,8 @@ router.use(protect);
 
 router.get("/", todoController.getTodos);
 
+router.get("/counts", todoController.getTodoCounts);
+
 router.get("/:id", todoController.getTodoById);
 
 router.post("/", todoController.createTodo);
