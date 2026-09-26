@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CheckSquare, Mail, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser } from "../store/slices/auth.slice";
-import { loginAPI } from "../services/api";
+import { loginUserThunk } from "../store/thunks/auth.thunk";
 
 export function LoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const user = useSelector((state) => state.user.user);
+  const { loading } = useSelector((state) => state.user);
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -52,25 +49,21 @@ export function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!validate()) return;
-    if (isLoading) return;
 
-    setIsLoading(true);
+    if (!validate()) return;
+    if (loading) return;
 
     try {
-      const data = await loginAPI({
+      await dispatch(loginUserThunk({
         email: form.email,
         password: form.password
-      });
+      }));
 
       toast.success("Logged in successfully");
-      dispatch(setUser(data.user));
       navigate("/tasks");
     } catch (error) {
       console.error("Error logging in", error);
-      toast.error(error?.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
+      toast.error(error.response?.data?.message || error?.message || "Something went wrong");
     }
   }
 
@@ -162,11 +155,11 @@ export function LoginPage() {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loading}
                   className={`w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600
-                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {isLoading ? "Logging in..." : "Sign in" }
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </form>
             </div>

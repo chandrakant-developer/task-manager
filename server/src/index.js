@@ -1,14 +1,17 @@
 const express = require('express');
 const cookieParser = require("cookie-parser");
 const cors = require('cors');
+
 require('dotenv').config();
-const connectDB = require('./config/db');
+
+const connectDB = require('./config/db.config');
+const seedData = require('./seeds');
+
+const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const todoRoutes = require('./routes/todo.routes');
 const listRoutes = require('./routes/list.routes');
 const tagRoutes = require('./routes/tag.routes');
-const authRoutes = require('./routes/auth.routes');
-const seedData = require('./seeds/runSeeds');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -19,7 +22,7 @@ const PORT = process.env.PORT || 5001;
 })();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "http://localhost:5176",
   credentials: true
 }));
 
@@ -38,7 +41,7 @@ app.use('/api/tags', tagRoutes);
 app.use('/api/todos', todoRoutes);
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route Not Found!!' });
+  res.status(404).json({ message: 'Route Not Found' });
 });
 
 app.listen(PORT, () => {

@@ -1,23 +1,21 @@
 const tagService = require('../services/tag.service');
-const ERRORS = require("../utils/errorCodes");
+const { ERRORS } = require("../constants");
 
 exports.getTags = async (req, res) => {
     try {
-        const { userId } = req.query;
-        const tags = await tagService.getTags(userId);
-        res.json({
+        const { role, userId } = req.user;
+
+        const tags = await tagService.getTags(role, userId);
+
+        res.status(200).json({
             success: true,
-            data: tags
+            message: "Tags fetched successfully",
+            count: tags.length,
+            data: tags,
         });
     } catch (error) {
-        if (error.message === ERRORS.TAG_ERRORS.TAG_NOT_FOUND) {
-            return res.status(404).json({
-                message: "Tag not found",
-                error: error.message
-            });
-        }
-
         res.status(500).json({
+            success: false,
             message: 'Error fetching tags',
             error: error.message
         });
@@ -26,21 +24,27 @@ exports.getTags = async (req, res) => {
 
 exports.createTag = async (req, res) => {
     try {
-        const { name, userId } = req.body;
+        const { name } = req.body;
+        const { userId } = req.user;
+
         const newTag = await tagService.createTag(name, userId);
+
         res.status(201).json({
+            success: true,
             message: "Tag created successfully",
             data: newTag
         });
     } catch (error) {
         if (error.message === ERRORS.TAG_ERRORS.TAG_EXISTS) {
             return res.status(409).json({
+                success: false,
                 message: 'Tag already exists',
                 error: error.message
             });
         }
 
         res.status(500).json({
+            success: false,
             message: 'Error creating tag',
             error: error.message
         });
@@ -50,21 +54,26 @@ exports.createTag = async (req, res) => {
 exports.deleteTag = async (req, res) => {
     try {
         const { id } = req.params;
-        const { userId } = req.query;
+        const { userId } = req.user;
+        
         await tagService.deleteTag(id, userId);
-        res.json({
+        
+        res.status(200).json({
+            success: true,
             message: "Tag deleted successfully"
         });
     } catch (error) {
         if (error.message === ERRORS.TAG_ERRORS.TAG_NOT_FOUND) {
             return res.status(404).json({
+                success: false,
                 message: "Tag not found",
                 error: error.message
             });
         }
 
         if (error.message === ERRORS.TAG_ERRORS.DEFAULT_TAG) {
-            return res.status(403).json({
+            return res.status(400).json({
+                success: false,
                 message: "Cannot delete default tag",
                 error: error.message
             });
@@ -72,12 +81,14 @@ exports.deleteTag = async (req, res) => {
 
         if (error.message === ERRORS.TAG_ERRORS.UNAUTHORIZED) {
             return res.status(403).json({
+                success: false,
                 message: "Unauthorized",
                 error: error.message
             });
         }
 
         res.status(500).json({
+            success: false,
             message: "Error deleting tag",
             error: error.message
         });

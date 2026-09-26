@@ -13,13 +13,13 @@ async function seedLists() {
     for (const listName of DEFAULT_LISTS) {
       const existingList = await List.findOne({
         name: listName,
-        userId: null,
+        userId: 0,
       });
 
       if (!existingList) {
         await List.create({
           name: listName,
-          userId: null,
+          userId: 0,
           isDefault: true,
         });
 

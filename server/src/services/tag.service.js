@@ -1,51 +1,28 @@
 const Tag = require('../models/tag.model');
-const ERRORS = require('../utils/errorCodes');
+const { ERRORS } = require("../constants");
 
-exports.getTags = async (userId) => {
+exports.getTags = async (role, userId) => {
   let query = {};
 
-  if (userId) {
-    query = { $or: [{ userId: null }, { userId: userId }] };
+  if (role === 'user') {
+    query = { $or: [{ isDefault: true }, { userId }] };
   } else {
-    query = { userId: null };
+    query = { isDefault: true };
   }
 
-  const tags = await Tag.find(query).sort({ isDefault: -1, createdAt: 1 });
-
-  if(tags.length === 0) {
-    throw new Error(ERRORS.TAG_ERRORS.TAG_NOT_FOUND);
-  }
-
-  return tags;
+  return await Tag.find(query).sort({ isDefault: -1, createdAt: 1 }).lean();
 };
 
 exports.createTag = async (name, userId) => {
   name = name.trim();
-  userId = userId | null;
 
-  if (!name) {
-    throw new Error(ERRORS.TAG_ERRORS.TAG_NAME_REQUIRED);
-  }
-
-  const existingTag = await Tag.findOne({
-    name,
-    $or: [
-      { userId: null },
-      { userId: userId }
-    ]
-  });
+  const existingTag = await Tag.findOne({ name, userId });
 
   if (existingTag) {
     throw new Error(ERRORS.TAG_ERRORS.TAG_EXISTS);
   }
 
-  const newTag = await Tag.create({
-    name,
-    userId,
-    isDefault: false
-  });
-
-  return newTag;
+  return await Tag.create({ name, userId, isDefault: false });
 }
 
 exports.deleteTag = async (id, userId) => {
@@ -59,9 +36,9 @@ exports.deleteTag = async (id, userId) => {
     throw new Error(ERRORS.TAG_ERRORS.DEFAULT_TAG);
   }
 
-  if (tag.userId && tag.userId !== userId) {
+  if (tag.userId && Number(tag.userId) !== Number(userId)) {
     throw new Error(ERRORS.TAG_ERRORS.UNAUTHORIZED);
   }
 
-  await Tag.findByIdAndDelete(id);
+  await tag.deleteOne();
 };
