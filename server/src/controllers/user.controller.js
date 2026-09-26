@@ -66,58 +66,6 @@ exports.updateUserProfile = async (req, res) => {
   }
 };
 
-exports.changePassword = async (req, res) => {
-  try {
-    const { id } = req.user;
-    const { currentPassword, newPassword } = req.body;
-
-    await userService.changePassword(id, currentPassword, newPassword);
-
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully"
-    });
-  } catch (error) {
-    if (error.message === ERRORS.USER_ERRORS.USER_NOT_FOUND) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-        error: error.message
-      });
-    }
-
-    if (error.message === ERRORS.USER_ERRORS.SAME_PASSWORD) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be different from current password",
-        error: error.message
-      });
-    }
-
-    if (error.message === ERRORS.USER_ERRORS.WEAK_PASSWORD) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters long",
-        error: error.message
-      });
-    }
-
-    if (error.message === ERRORS.USER_ERRORS.INVALID_CREDENTIALS) {
-      return res.status(401).json({
-        success: false,
-        message: "Current password is incorrect",
-        error: error.message
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Error updating password",
-      error: error.message
-    });
-  }
-};
-
 exports.getUserSessions = async (req, res) => {
   try {
     const { userId } = req.user;

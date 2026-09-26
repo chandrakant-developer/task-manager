@@ -41,7 +41,7 @@ exports.loginUser = async (req, res) => {
 
         res.cookie("accessToken", response.accessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60 * 1000
+            maxAge: 1 * 60 * 1000
         });
 
         res.cookie("refreshToken", response.refreshToken, {
@@ -79,7 +79,7 @@ exports.refreshToken = async (req, res) => {
 
         res.cookie("accessToken", response.accessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60 * 1000
+            maxAge: 1 * 60 * 1000
         });
 
         res.status(200).json({
@@ -152,4 +152,56 @@ exports.logoutUser = async (req, res) => {
             error: error.message
         });
     }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { currentPassword, newPassword } = req.body;
+
+    await authService.changePassword(id, currentPassword, newPassword);
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully"
+    });
+  } catch (error) {
+    if (error.message === ERRORS.AUTH_ERRORS.USER_NOT_FOUND) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+        error: error.message
+      });
+    }
+
+    if (error.message === ERRORS.AUTH_ERRORS.SAME_PASSWORD) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password",
+        error: error.message
+      });
+    }
+
+    if (error.message === ERRORS.AUTH_ERRORS.WEAK_PASSWORD) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long",
+        error: error.message
+      });
+    }
+
+    if (error.message === ERRORS.AUTH_ERRORS.INVALID_CREDENTIALS) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect",
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Error updating password",
+      error: error.message
+    });
+  }
 };

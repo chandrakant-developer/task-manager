@@ -3,22 +3,17 @@ import { Link } from 'react-router-dom';
 import { CheckSquare, Mail, Lock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
-import { registerAPI } from '../services/api';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { registerUserThunk } from "../store/thunks/auth.thunk";
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.user.user);
+  const { loading } = useSelector((state) => state.user);
 
   const [errors, setErrors] = useState({});
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -65,31 +60,21 @@ export function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!validate()) return;
-    if (isLoading) return;
 
-    setIsLoading(true);
+    if (!validate()) return;
+    if (loading) return;
 
     try {
-      const data = await registerAPI({
+      await dispatch(registerUserThunk({
         name: form.name,
         email: form.email,
         password: form.password
-      });
+      }));
 
       toast.success("User registered successfully");
       navigate("/login");
     } catch (error) {
-      console.error(error);
-
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error?.message ||
-        "Something went wrong";
-
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
+      toast.error(error.response?.data?.message || error.message || "Something went wrong");
     }
   }
 
@@ -218,11 +203,11 @@ export function RegisterPage() {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loading}
                   className={`w-full mt-2 py-3 px-4 rounded-lg bg-indigo-500 text-white font-medium transition-colors hover:bg-indigo-600
-                    ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {isLoading ? "In progress..." : "Create Account"}
+                  {loading ? "Creating account..." : "Create Account"}
                 </button>
               </form>
             </div>
