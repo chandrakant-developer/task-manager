@@ -1,39 +1,31 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Sidebar } from './components';
-import { TaskPage, SettingsPage, RegisterPage, LoginPage, HomePage } from './pages';
+import { Spinner } from './components';
+import { TaskPage, RegisterPage, LoginPage, HomePage } from './pages';
 import { ToastContainer } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser, clearUser } from "./store/slices/auth.slice";
-import { setList } from "./store/slices/listSlice";
-import { setTag } from "./store/slices/tagSlice";
-import { userAPI, getListsAPI, getTagsAPI } from "./services/api";
+import { fetchListThunk, createListThunk, deleteListThunk } from "./store/thunks/list.thunk";
+import { fetchTagThunk, createTagThunk, deleteTagThunk } from "./store/thunks/tag.thunk";
+import { restoreSessionThunk } from "./store/thunks/auth.thunk";
 import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
+  
   const user = useSelector((state) => state.user.user);
-
   const [loading, setLoading] = useState(true);
-
   const isAuthRoute = location.pathname === '/register' || location.pathname === '/login';
   const isLandingRoute = location.pathname === '/';
 
   useEffect(() => {
-    if(!user) return;
-
-    const fetchData = async () => {
+    if (!user) return;
+    
+    async function fetchData () {
       try {
-        const [lists, tags] = await Promise.all([
-          getListsAPI(user.userId),
-          getTagsAPI(user.userId),
-        ]);
-
-        dispatch(setList(lists.data));
-        dispatch(setTag(tags.data));
+        await dispatch(fetchListThunk());
+        await dispatch(fetchTagThunk());
       } catch (error) {
         console.error("Error fetching data", error);
       }
@@ -45,17 +37,16 @@ function App() {
   useEffect(() => { 
     async function restoreSession() {
       try {
-        const data = await userAPI();
-        dispatch(setUser(data));
+        await dispatch(restoreSessionThunk());
       } catch (error) {
-        dispatch(clearUser());
+        console.log("Session restore failed");
       } finally {
         setLoading(false);
       }
     }
 
     restoreSession();    
-  }, [dispatch, isAuthRoute]);
+  }, []);
 
   useEffect(() => {
      if(loading) return;
@@ -65,11 +56,15 @@ function App() {
     }
 
     if(user && isAuthRoute) {
-      navigate("/tasks");
+      navigate("/tasks", { replace: true });
     }
   }, [user, loading, isAuthRoute, isLandingRoute, navigate]);
 
-  if(loading && !isAuthRoute) return null;
+  if(loading && !isAuthRoute) {
+    return (
+      <Spinner />
+    );
+  }
 
   return (
     <>
@@ -90,12 +85,9 @@ function App() {
 
       {!isAuthRoute && !isLandingRoute && (
         <div className="flex min-h-screen bg-[linear-gradient(135deg,#eef2ff_0%,#f0f9ff_50%,#f8fafc_100%)] bg-fixed">
-          <Sidebar />
-
           <main className="flex flex-1 relative h-screen overflow-hidden ml-[calc(320px+1rem)] min-w-0 max-w-full max-md:ml-0">
             <Routes>
               <Route path="/tasks" element={<TaskPage />} />
-              <Route path="/settings" element={<SettingsPage onClose={() => navigate('/tasks')} />} />
             </Routes>
           </main>
         </div>

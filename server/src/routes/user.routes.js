@@ -9,8 +9,6 @@ router.get("/profile", userController.getUserProfile);
 
 router.put("/profile", userController.updateUserProfile);
 
-router.put("/password", userController.changePassword);
-
 router.get("/sessions", userController.getUserSessions);
 
 router.delete("/sessions/:id", userController.revokeSession);

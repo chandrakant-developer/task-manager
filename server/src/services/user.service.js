@@ -38,36 +38,6 @@ exports.updateUserProfile = async (id, data) => {
   return mapUser(updatedUser);
 };
 
-exports.changePassword = async (id, currentPassword, newPassword) => {
-  const user = await User.findById(id);
-
-  if (!user) {
-    throw new Error(ERRORS.USER_ERRORS.USER_NOT_FOUND);
-  }
-
-  if(currentPassword === newPassword) {
-    throw new Error(ERRORS.USER_ERRORS.SAME_PASSWORD);
-  }
-
-  if (newPassword.length < 8) {
-    throw new Error(ERRORS.USER_ERRORS.WEAK_PASSWORD);
-  }
-
-  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-
-  if (!isPasswordValid) {
-    throw new Error(ERRORS.USER_ERRORS.INVALID_CREDENTIALS);
-  }
-
-  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-
-  user.password = hashedPassword;
-
-  await user.save();
-
-  return true;
-};
-
 exports.getUserSessions = async (userId) => {
   return await Session.find({ userId }).select("_id device ipAddress createdAt").lean();
 };
